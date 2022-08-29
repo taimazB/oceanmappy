@@ -1,0 +1,359 @@
+html, body {
+  overflow-x: visible;
+  height: auto;
+}
+
+/* Spaces */
+.pa-0 {
+  padding: 0 !important
+}
+
+.pt-0 {
+  padding-top: 0 !important
+}
+
+.pb-0 {
+  padding-bottom: 0 !important
+}
+
+.vertical-middle {
+  vertical-align: middle
+}
+
+/* Display */
+.d-none {
+  display: none !important
+}
+
+.d-block {
+  display: block !important
+}
+
+.d-flex {
+  display: flex !important;
+}
+
+.flex-row {
+  flex-direction: row
+}
+
+.flex-column {
+  flex-direction: column
+}
+
+.flex-wrap {
+  flex-wrap: wrap
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.justify-content-center {
+  justify-content: center
+}
+
+.justify-content-start {
+  justify-content: start
+}
+
+.justify-content-around {
+  justify-content: space-around
+}
+
+.align-items-center {
+  align-items: center
+}
+
+.font-weight-bold {
+  font-weight: bold
+}
+
+/* Header */
+.navbar-wrapper.navbar-fade .hero-head {
+  background-color: #444F60
+}
+
+.hero-head {
+  box-shadow: 0 0 8px 0 rgb(0 0 0 / 12%);
+}
+
+/* Slick Carousel */
+.slick-slide > div {
+  display: flex
+}
+
+.slick-dots {
+  bottom: -50px !important;
+}
+
+.slick-slider .slick-arrow {
+  border: 1px solid #ededed;
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  border-radius: 100px;
+  cursor: pointer;
+  color: #444F60 !important;
+  transition: all 0.3s;
+  z-index: 999;
+}
+
+.slick-slider .slick-arrow:before {
+  color: #4FC1EA;
+}
+
+.slick-slider .slick-arrow:hover {
+  background: #4FC1EA;
+  box-shadow: 0 14px 26px -12px rgb(79 193 234 / 42%), 0 4px 23px 0px rgb(0 0 0 / 12%), 0 8px 10px -5px rgb(79 193 234 / 20%) !important;
+}
+
+.slick-slider .slick-arrow:hover:before {
+  color: #fff !important;
+}
+
+/* Home Page */
+.home_banner {
+  /*background: url(../images/Graphic_homeSVG.svg);*/
+  /*background-repeat: no-repeat !important;*/
+  /*background-size: 100% !important;*/
+  /*background-position: center !important;*/
+  background: #fff
+  /*background: #366370;*/
+  /*background: -webkit-linear-gradient(bottom right, #366370, #94ABD3);*/
+  /*background: -moz-linear-gradient(bottom right, #366370, #94ABD3);*/
+  /*background: linear-gradient(to top left, #0066ff, #fff);*/
+}
+
+.VueCarousel-pagination {
+  bottom: -4rem !important;
+}
+
+.page_banner {
+  height: 100vh;
+  /*background-position: 0 !important*/
+}
+
+/* About */
+.hero_about {
+  background: url(../images/login.png);
+}
+
+/* Login / Signup */
+.login-hero {
+  background: url(../images/login.png) no-repeat;
+  background-size: cover;
+}
+
+/* Resources */
+.resources li {
+  list-style: auto;
+  list-style-position: inside;
+}
+
+/* Footer */
+footer {
+  position: relative;
+  min-height: 140px;
+  clip-path: polygon(0 0, 0% 0%, 200% 100%, 0 100%);
+  -webkit-clip-path: polygon(0 0, 0% 0%, 200% 100%, 0 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+footer.footer-dark .columns {
+  padding-top: 15px !important;
+  padding-bottom: 15px !important
+}
+
+/* Other */
+.overflow-hidden {
+  overflow: hidden
+}
+
+.w-100 {
+  width: 100%
+}
+
+.parallax-overlay {
+  background-color: rgb(0, 0, 0);
+  opacity: 0.3;
+}
+
+.pointer {
+  cursor: pointer
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+.nuxt-link-active {
+  border-bottom-color: #fff !important;
+  color: #fcfcfc !important;
+}
+
+.navbar-sticky .nuxt-link-active {
+  border-bottom-color: #4FC1EA !important;
+  color: #4FC1EA !important;
+}
+
+/* Colors */
+.white-text {
+  color: #fff
+}
+
+.blue-color {
+  color: #4FC1EA !important
+}
+
+.border-blue-color {
+  border-color: #4FC1EA !important
+}
+
+.save-button {
+  display: none
+}
+
+@media only screen and (max-width: 1264px) {
+  .home_banner h1 .title.is-1 {
+    font-size: 3rem
+  }
+
+  .home_banner h1 .title.is-2 {
+    font-size: 2rem
+  }
+
+  .home_banner h2.is-4 {
+    font-size: 1.2rem
+  }
+
+  #business-types > .container {
+    max-width: 100%;
+  }
+
+  footer {
+    clip-path: none;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  #business-types .integration-cards {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #business-types .integration-cards > section {
+    width: 100%
+  }
+
+  .home_banner h1 .title.is-1 {
+    font-size: 2.5rem
+  }
+
+  .home_banner h1 .title.is-2 {
+    font-size: 1.8rem
+  }
+
+  .home_banner .is-6.signup-column {
+    padding-right: 0 !important;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .home_banner .mobile_banner_image {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .accordion-section.title.is-4, .accordion-section.title.is-4 .accordion-content {
+    font-size: 1rem
+  }
+
+  .column .feature-card {
+    width: 100% !important
+  }
+
+  .home_banner.parallax {
+    overflow-y: scroll !important;
+  }
+
+  .home_banner .parallax-overlay {
+    height: 230vh
+  }
+
+  .home_banner .banner_image {
+    display: none
+  }
+
+  .home_banner .mobile_banner_image {
+    margin-top: 20px;
+  }
+
+  .home_banner .signup-column {
+    padding-top: 80px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .home_banner .signup-column h2 {
+    line-height: 2rem !important;
+    padding-left: 5% !important;
+    padding-right: 5% !important;
+  }
+}
+
+@media only screen and (max-width: 700px) {
+  .home_banner .parallax-overlay {
+    height: 220vh
+  }
+}
+
+@media only screen and (max-width: 650px) {
+  .home_banner .parallax-overlay {
+    height: 210vh
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .home_banner .parallax-overlay {
+    height: 200vh
+  }
+}
+
+@media only screen and (max-width: 550px) {
+  .home_banner .parallax-overlay {
+    height: 190vh
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  #main-hero {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .home_banner .parallax-overlay {
+    height: 180vh
+  }
+
+  .home_banner h1 .title.is-1 {
+    font-size: 2.2rem !important
+  }
+
+  .home_banner h1 .title.is-2 {
+    font-size: 1.2rem !important
+  }
+
+  .home_banner h2.is-4 {
+    font-size: 1rem !important
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .home_banner .parallax-overlay {
+    height: 170vh
+  }
+}

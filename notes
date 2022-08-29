@@ -1,0 +1,3 @@
+ERROR:	Error: error:0308010C:digital envelope routines::unsupported
+FIX:	export NODE_OPTIONS=--openssl-legacy-provider
+
