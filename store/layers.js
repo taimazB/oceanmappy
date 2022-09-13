@@ -379,7 +379,7 @@ export const state = () => ({
     {
       name: 'Currents',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: null,
       fields: [
         {
@@ -682,7 +682,7 @@ export const state = () => ({
     {
       name: 'SST',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Sea Surface Temperature',
       fields: [
         {
@@ -927,7 +927,7 @@ export const state = () => ({
     {
       name: 'SSS',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Sea Surface Salinity',
       fields: [
         {
@@ -1027,7 +1027,7 @@ export const state = () => ({
     {
       name: 'SSD',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Sea Surface Density',
       fields: [
         {
@@ -1135,7 +1135,7 @@ export const state = () => ({
     {
       name: 'MLD',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Mixed Layer Depth',
       fields: [
         {
@@ -1308,7 +1308,7 @@ export const state = () => ({
     {
       name: 'Wave',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Wave Related Products',
       fields: [
         {
@@ -1511,7 +1511,7 @@ export const state = () => ({
     {
       name: 'SHF',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: 'Surface Heat Flux',
       fields: [
         {
@@ -1608,7 +1608,7 @@ export const state = () => ({
     {
       name: 'Seaice',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: null,
       fields: [
         {
@@ -1756,7 +1756,7 @@ export const state = () => ({
     {
       name: 'Chlorophyll',
       show: true,
-      atmosphere:false,
+      atmosphere: false,
       longName: null,
       fields: [
         {
@@ -1943,7 +1943,7 @@ export const state = () => ({
     {
       name: 'temperature',
       show: true,
-      atmosphere:true,
+      atmosphere: true,
       longName: 'Air Temperature',
       fields: [
         {
@@ -1960,72 +1960,72 @@ export const state = () => ({
               region: 'R',
               depthProperties: {
                 hasDepth: true,
-                iDepth: 30,
+                iDepth: 0,
                 depthLabels: [
-                  '10',
-                  '20',
-                  '30',
-                  '50',
-                  '100',
-                  '150',
-                  '175',
-                  '200',
-                  '225',
-                  '250',
-                  '275',
-                  '300',
-                  '350',
-                  '400',
-                  '450',
-                  '500',
-                  '550',
-                  '600',
-                  '650',
-                  '700',
-                  '750',
-                  '800',
-                  '850',
-                  '875',
-                  '900',
-                  '925',
-                  '950',
-                  '970',
-                  '985',
-                  '1000',
                   '1015',
+                  '1000',
+                  '985',
+                  '970',
+                  '950',
+                  '925',
+                  '900',
+                  '875',
+                  '850',
+                  '800',
+                  '750',
+                  '700',
+                  '650',
+                  '600',
+                  '550',
+                  '500',
+                  '450',
+                  '400',
+                  '350',
+                  '300',
+                  '275',
+                  '250',
+                  '225',
+                  '200',
+                  '175',
+                  '150',
+                  '100',
+                  '50',
+                  '30',
+                  '20',
+                  '10',
                 ],
                 depthValues: [
-                  '0010',
-                  '0020',
-                  '0030',
-                  '0050',
-                  '0100',
-                  '0150',
-                  '0175',
-                  '0200',
-                  '0225',
-                  '0250',
-                  '0275',
-                  '0300',
-                  '0350',
-                  '0400',
-                  '0450',
-                  '0500',
-                  '0550',
-                  '0600',
-                  '0650',
-                  '0700',
-                  '0750',
-                  '0800',
-                  '0850',
-                  '0875',
-                  '0900',
-                  '0925',
-                  '0950',
-                  '0970',
-                  '0985',
-                  '1000',
                   '1015',
+                  '1000',
+                  '0985',
+                  '0970',
+                  '0950',
+                  '0925',
+                  '0900',
+                  '0875',
+                  '0850',
+                  '0800',
+                  '0750',
+                  '0700',
+                  '0650',
+                  '0600',
+                  '0550',
+                  '0500',
+                  '0450',
+                  '0400',
+                  '0350',
+                  '0300',
+                  '0275',
+                  '0250',
+                  '0225',
+                  '0200',
+                  '0175',
+                  '0150',
+                  '0100',
+                  '0050',
+                  '0030',
+                  '0020',
+                  '0010',
                 ],
               },
               imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
@@ -3847,6 +3847,10 @@ export const mutations = {
         .filter((c) => c.name === obj.category)[0]
         .fields.filter((f) => f.name === obj.field)[0]
         .models.filter((model) => model.modelDir === obj.model)[0]
+  },
+
+  updateSelected(state, selected) {
+    state.selected = selected
   },
 
   setSelectedBathymetry(state, value) {

@@ -99,7 +99,7 @@
       <v-divider vertical />
 
       <!-- DEPTH -->
-      <!-- <section style="width: 100px; place-self: center">
+      <section style="width: 100px; place-self: center">
         <v-btn elevation="0" @click="toggleDepthSlider">{{getDepth()}}</v-btn>
       </section>
 
@@ -114,7 +114,7 @@
         height="100%"
         style="position: absolute; right: 35px; width: 30px; bottom: 50px"
       >
-      </v-slider> -->
+      </v-slider>
     </v-row>
   </v-sheet>
 </template>
@@ -312,7 +312,9 @@ export default {
         return this.selected.depthProperties.iDepth
       },
       set(value) {
-        this.selected.depthProperties.iDepth = value
+        const cloneSelected = JSON.parse(JSON.stringify(this.selected))
+        cloneSelected.depthProperties.iDepth = value
+        this.$store.commit('layers/updateSelected',cloneSelected)
         this.$store.dispatch('map/setRedrawTrue')
       },
     },

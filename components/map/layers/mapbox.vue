@@ -143,12 +143,11 @@ export default {
         'gl-draw',
         'distance',
         'argo',
-        // --- BASE MAP
+        // --- LAND
         'country-boundaries',
-        
         // --- ATMOSPHERE
         'filled_atm',
-        
+        // --- MAP STUFF
         'tunnel',
         'road',
         'bridge',
