@@ -65,6 +65,7 @@ export function loadImageCurrents() {
           this.onAllLoadedCurrents(tileAddress, Xs, images, zoom)
       }
       let url = `${process.env.tuvaq2Url}/imgCurrents?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&z=${tileAddress.ne[2]}&x=${Xs[ix]}&y=${y}&minOrg=${minOrg}`
+      console.log(url);
       stops.forEach((stop) => {
         url = `${url}&stop=${stop}`
       })

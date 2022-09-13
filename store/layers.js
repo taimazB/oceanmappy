@@ -379,6 +379,7 @@ export const state = () => ({
     {
       name: 'Currents',
       show: true,
+      atmosphere:false,
       longName: null,
       fields: [
         {
@@ -681,6 +682,7 @@ export const state = () => ({
     {
       name: 'SST',
       show: true,
+      atmosphere:false,
       longName: 'Sea Surface Temperature',
       fields: [
         {
@@ -753,6 +755,23 @@ export const state = () => ({
               btnText: 'RIOPS',
               longName: 'Regional Ice Ocean Prediction System',
               link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_riops/readme_riops-datamart-alpha_en/',
+              region: 'R',
+              depthProperties: {
+                hasDepth: false,
+              },
+              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+              imgBndsZoomed: false,
+              availDateTimes: [],
+              hasDateTime: true,
+            },
+            {
+              category: 'SST',
+              field: 'SST',
+              subProducts: { hasSub: false },
+              modelDir: 'CIOPS',
+              btnText: 'CIOPS',
+              longName: '',
+              link: '',
               region: 'R',
               depthProperties: {
                 hasDepth: false,
@@ -908,6 +927,7 @@ export const state = () => ({
     {
       name: 'SSS',
       show: true,
+      atmosphere:false,
       longName: 'Sea Surface Salinity',
       fields: [
         {
@@ -1007,6 +1027,7 @@ export const state = () => ({
     {
       name: 'SSD',
       show: true,
+      atmosphere:false,
       longName: 'Sea Surface Density',
       fields: [
         {
@@ -1114,6 +1135,7 @@ export const state = () => ({
     {
       name: 'MLD',
       show: true,
+      atmosphere:false,
       longName: 'Mixed Layer Depth',
       fields: [
         {
@@ -1286,6 +1308,7 @@ export const state = () => ({
     {
       name: 'Wave',
       show: true,
+      atmosphere:false,
       longName: 'Wave Related Products',
       fields: [
         {
@@ -1488,6 +1511,7 @@ export const state = () => ({
     {
       name: 'SHF',
       show: true,
+      atmosphere:false,
       longName: 'Surface Heat Flux',
       fields: [
         {
@@ -1584,6 +1608,7 @@ export const state = () => ({
     {
       name: 'Seaice',
       show: true,
+      atmosphere:false,
       longName: null,
       fields: [
         {
@@ -1731,6 +1756,7 @@ export const state = () => ({
     {
       name: 'Chlorophyll',
       show: true,
+      atmosphere:false,
       longName: null,
       fields: [
         {
@@ -1818,182 +1844,292 @@ export const state = () => ({
         },
       ],
     },
+    // {
+    //   name: 'Altimetry',
+    //   show: false,
+    //   longName: null,
+    //   fields: [
+    //     {
+    //       name: 'Altimetry',
+    //       models: [],
+    //       colorbar: {
+    //         hasColorbar: true,
+    //         step: 0.001,
+    //         minOrg: -1,
+    //         toFixed: 3,
+    //         colormapOrg: [
+    //           {
+    //             value: -1,
+    //             color: '#003399',
+    //           },
+    //           {
+    //             value: -0.75,
+    //             color: '#33cccc',
+    //           },
+    //           {
+    //             value: -0.5,
+    //             color: '#00cc66',
+    //           },
+    //           {
+    //             value: -0.25,
+    //             color: '#66ff66',
+    //           },
+    //           {
+    //             value: 0,
+    //             color: '#ffffff',
+    //           },
+    //           {
+    //             value: 0.25,
+    //             color: '#ffff00',
+    //           },
+    //           {
+    //             value: 0.5,
+    //             color: '#ff9900',
+    //           },
+    //           {
+    //             value: 0.75,
+    //             color: '#ff3300',
+    //           },
+    //           {
+    //             value: 1,
+    //             color: '#800000',
+    //           },
+    //         ],
+    //         colormap: [
+    //           {
+    //             value: -1,
+    //             color: '#003399',
+    //           },
+    //           {
+    //             value: -0.75,
+    //             color: '#33cccc',
+    //           },
+    //           {
+    //             value: -0.5,
+    //             color: '#00cc66',
+    //           },
+    //           {
+    //             value: -0.25,
+    //             color: '#66ff66',
+    //           },
+    //           {
+    //             value: 0,
+    //             color: '#ffffff',
+    //           },
+    //           {
+    //             value: 0.25,
+    //             color: '#ffff00',
+    //           },
+    //           {
+    //             value: 0.5,
+    //             color: '#ff9900',
+    //           },
+    //           {
+    //             value: 0.75,
+    //             color: '#ff3300',
+    //           },
+    //           {
+    //             value: 1,
+    //             color: '#800000',
+    //           },
+    //         ],
+    //       },
+    //       unit: 'm',
+    //       icon: '',
+    //       hasSetting: false,
+    //     },
+    //   ],
+    // },
     {
-      name: 'Altimetry',
-      show: false,
-      longName: null,
+      name: 'temperature',
+      show: true,
+      atmosphere:true,
+      longName: 'Air Temperature',
       fields: [
         {
-          name: 'Altimetry',
-          models: [],
+          name: 'temperature',
+          models: [
+            {
+              category: 'temperature',
+              field: 'temperature',
+              subProducts: { hasSub: false },
+              modelDir: 'HRDPS',
+              btnText: 'HRDPS',
+              longName: '',
+              link: '',
+              region: 'R',
+              depthProperties: {
+                hasDepth: true,
+                iDepth: 30,
+                depthLabels: [
+                  '10',
+                  '20',
+                  '30',
+                  '50',
+                  '100',
+                  '150',
+                  '175',
+                  '200',
+                  '225',
+                  '250',
+                  '275',
+                  '300',
+                  '350',
+                  '400',
+                  '450',
+                  '500',
+                  '550',
+                  '600',
+                  '650',
+                  '700',
+                  '750',
+                  '800',
+                  '850',
+                  '875',
+                  '900',
+                  '925',
+                  '950',
+                  '970',
+                  '985',
+                  '1000',
+                  '1015',
+                ],
+                depthValues: [
+                  '0010',
+                  '0020',
+                  '0030',
+                  '0050',
+                  '0100',
+                  '0150',
+                  '0175',
+                  '0200',
+                  '0225',
+                  '0250',
+                  '0275',
+                  '0300',
+                  '0350',
+                  '0400',
+                  '0450',
+                  '0500',
+                  '0550',
+                  '0600',
+                  '0650',
+                  '0700',
+                  '0750',
+                  '0800',
+                  '0850',
+                  '0875',
+                  '0900',
+                  '0925',
+                  '0950',
+                  '0970',
+                  '0985',
+                  '1000',
+                  '1015',
+                ],
+              },
+              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+              imgBndsZoomed: false,
+              availDateTimes: [],
+              hasDateTime: true,
+            },
+          ],
           colorbar: {
             hasColorbar: true,
-            step: 0.001,
-            minOrg: -1,
-            toFixed: 3,
+            step: 0.1,
+            minOrg: -100,
+            toFixed: 0,
             colormapOrg: [
               {
-                value: -1,
-                color: '#003399',
+                value: -40,
+                color: '#cc00cc',
               },
               {
-                value: -0.75,
-                color: '#33cccc',
+                value: -30,
+                color: '#ff99ff',
               },
               {
-                value: -0.5,
-                color: '#00cc66',
+                value: -20,
+                color: '#0066cc',
               },
               {
-                value: -0.25,
-                color: '#66ff66',
+                value: -10,
+                color: '#66ffcc',
               },
               {
                 value: 0,
-                color: '#ffffff',
+                color: '#009933',
               },
               {
-                value: 0.25,
+                value: 10,
+                color: '#ccff66',
+              },
+              {
+                value: 20,
                 color: '#ffff00',
               },
               {
-                value: 0.5,
-                color: '#ff9900',
+                value: 30,
+                color: '#ff9933',
               },
               {
-                value: 0.75,
-                color: '#ff3300',
+                value: 40,
+                color: '#ff0000',
               },
               {
-                value: 1,
-                color: '#800000',
+                value: 50,
+                color: '#ffcccc',
               },
             ],
             colormap: [
               {
-                value: -1,
-                color: '#003399',
+                value: -40,
+                color: '#cc00cc',
               },
               {
-                value: -0.75,
-                color: '#33cccc',
+                value: -30,
+                color: '#ff99ff',
               },
               {
-                value: -0.5,
-                color: '#00cc66',
+                value: -20,
+                color: '#0066cc',
               },
               {
-                value: -0.25,
-                color: '#66ff66',
+                value: -10,
+                color: '#66ffcc',
               },
               {
                 value: 0,
-                color: '#ffffff',
+                color: '#009933',
               },
               {
-                value: 0.25,
+                value: 10,
+                color: '#ccff66',
+              },
+              {
+                value: 20,
                 color: '#ffff00',
               },
               {
-                value: 0.5,
-                color: '#ff9900',
+                value: 30,
+                color: '#ff9933',
               },
               {
-                value: 0.75,
-                color: '#ff3300',
+                value: 40,
+                color: '#ff0000',
               },
               {
-                value: 1,
-                color: '#800000',
+                value: 50,
+                color: '#ffcccc',
               },
             ],
           },
-          unit: 'm',
-          icon: '',
+          unit: '&deg;C',
+          icon: 'mdi-thermometer',
           hasSetting: false,
         },
       ],
     },
-    // {
-    //   field: 'Wind',
-    //   show: true,
-    //   longName: 'Surface Wind',
-    //   models: [
-    //     {
-    //       field: 'Wind',
-    //       modelDir: 'Barents',
-    //       btnText: 'Barents',
-    //       longName: '',
-    //       link: 'https://www.met.no/hav-og-nordomrader-landing',
-    //       region: 'G',
-    //       depthProperties: {
-    //         hasDepth: false,
-    //       },
-    //       imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-    //       imgBndsZoomed: false,
-    //       availDateTimes: [],
-    //       hasDateTime: true,
-    //     },
-    //   ],
-    //   colorbar:       {
-    //     hasColorbar: true,
-    //     step: 0.01,
-    //     minOrg: -100,
-    //     toFixed: 1,
-    //     colormapOrg: [
-    //       {
-    //         value: 0,
-    //         color: '#cc00cc',
-    //       },
-    //       {
-    //         value: 5,
-    //         color: '#0066cc',
-    //       },
-    //       {
-    //         value: 10,
-    //         color: '#009933',
-    //       },
-    //       {
-    //         value: 15,
-    //         color: '#ffff00',
-    //       },
-    //       {
-    //         value: 20,
-    //         color: '#ff0000',
-    //       },
-    //       {
-    //         value: 25,
-    //         color: '#ffcccc',
-    //       },
-    //     ],
-    //     colormap: [
-    //       {
-    //         value: 0,
-    //         color: '#cc00cc',
-    //       },
-    //       {
-    //         value: 5,
-    //         color: '#0066cc',
-    //       },
-    //       {
-    //         value: 10,
-    //         color: '#009933',
-    //       },
-    //       {
-    //         value: 15,
-    //         color: '#ffff00',
-    //       },
-    //       {
-    //         value: 20,
-    //         color: '#ff0000',
-    //       },
-    //       {
-    //         value: 25,
-    //         color: '#ffcccc',
-    //       },
-    //     ],
-    //   },
-    // }
     // {
     //   field: 'AIS',
     // show:true,
@@ -3813,5 +3949,15 @@ export const mutations = {
 
   setLoadingAltimetry(state, status) {
     state.loadingAltimetry = status
+  },
+
+  setColormap(state, obj) {
+    state.categories.forEach((category) => {
+      category.fields.forEach((field) => {
+        if (field.name === obj.field.name) {
+          field.colorbar.colormap = obj.colormap
+        }
+      })
+    })
   },
 }

@@ -22,8 +22,10 @@ export function createAnimCanvas() {
 }
 
 export function clearAnimCanvas() {
-  const width = this.wind.windData.width
-  const height = this.wind.windData.widtheight
+  // const width = this.wind.windData.width
+  // const height = this.wind.windData.widtheight
+  const width = this.wind.gl.canvas.width
+  const height = this.wind.gl.canvas.height
 
   // --- Create an image for webgl
   const webglImage = new Image()
@@ -51,7 +53,7 @@ export function clearAnimCanvas() {
 
 export function animPrepare(width, height, cnvTmp, tileAddress) {
   // --- Create an image for webgl
-  this.wind.numParticles = 40000
+  this.wind.numParticles = 15000 // 40000
   const webglImage = new Image()
   const windData = {
     width,

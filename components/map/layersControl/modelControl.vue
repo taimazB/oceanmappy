@@ -72,7 +72,7 @@
         v-if="field.name === 'Currents' || field.name === 'Wind'"
         class="ma-0 pa-0 px-2 pt-4"
       >
-        <v-row>
+        <!-- <v-row>
           <v-spacer></v-spacer>
           <v-btn
             fab
@@ -95,20 +95,7 @@
           >
             <v-icon x-small>mdi-transition</v-icon>
           </v-btn>
-          <!-- <v-btn
-                  v-if="currentsDirectionOn"
-                  fab
-                  width="20px"
-                  height="20px"
-                  elevation="0"
-                  :color="currentsLocked ? 'primary' : ''"
-                  @click="currentsLocked = !currentsLocked"
-                >
-                  <v-icon x-small>{{
-                    currentsLocked ? 'mdi-lock' : 'mdi-lock-open-variant'
-                  }}</v-icon>
-                </v-btn> -->
-        </v-row>
+        </v-row> -->
         <!-- <v-row>
                 <v-col
                   cols="4"
@@ -151,7 +138,7 @@
                 </v-col>
               </v-row> -->
 
-        <v-row v-if="currentsDirectionOn && !currentsAnimationOn">
+        <!-- <v-row v-if="currentsDirectionOn && !currentsAnimationOn">
           <v-col
             cols="6"
             class="ma-0 pa-0 pl-1 fontSizeXS"
@@ -171,7 +158,7 @@
             >
             </v-range-slider>
           </v-col>
-        </v-row>
+        </v-row> -->
       </section>
 
       <!-- LAYER OPACITY -->

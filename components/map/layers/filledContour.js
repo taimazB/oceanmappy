@@ -3,12 +3,10 @@ export function addFilledContour() {
   const category = this.$store.state.layers.selected.category
   const field = this.$store.state.layers.selected.field
   const model = this.$store.state.layers.selected.modelDir
-  // const iDepth =
-  //   this.$store.state.layers.selected.depthProperties.depthValues.length -
-  //   this.$store.state.layers.selected.depthProperties.iDepth -
-  //   1
   const date = this.$store.state.layers.interDate
   const time = this.$store.state.layers.interTime
+  const isAtmosphere = this.$store.state.layers.categories.filter(c=>c.name===category)[0].atmosphere
+  console.log(category,field,model,time,date,isAtmosphere);
   const colorbar = this.$store.state.layers.categories
     .filter((c) => c.name === category)[0]
     .fields.filter((f) => f.name === field)[0].colorbar
@@ -48,7 +46,8 @@ export function addFilledContour() {
   const oldLayers = sources.filter((src) => src.includes('filled'))
 
   if (oldLayers.length === 0) {
-    this.map.addSource('filled_0', {
+    const srcName = `filled_${isAtmosphere?'atm':'ocn'}_0`
+    this.map.addSource(srcName, {
       type: 'raster',
       tiles: [url],
       tilesize: 512,
@@ -56,9 +55,9 @@ export function addFilledContour() {
 
     this.map.addLayer(
       {
-        id: 'filled_0',
+        id: srcName,
         type: 'raster',
-        source: 'filled_0',
+        source: srcName,
         paint: {
           'raster-resampling': 'nearest',
           'raster-opacity': this.activeLayerOpacity,
@@ -69,17 +68,18 @@ export function addFilledContour() {
     )
   } else {
     const oldLayer = oldLayers[oldLayers.length - 1]
-    const i = parseInt(oldLayer.split('_')[1]) + 1
-    this.map.addSource(`filled_${i}`, {
+    const i = parseInt(oldLayer.split('_')[2]) + 1
+    const srcName = `filled_${isAtmosphere?'atm':'ocn'}_${i}`
+    this.map.addSource(srcName, {
       type: 'raster',
       tiles: [url],
       tilesize: 512,
     })
 
     this.map.addLayer({
-      id: `filled_${i}`,
+      id: srcName,
       type: 'raster',
-      source: `filled_${i}`,
+      source: srcName,
       paint: {
         'raster-resampling': 'nearest',
         'raster-opacity': this.activeLayerOpacity,

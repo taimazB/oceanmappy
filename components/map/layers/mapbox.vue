@@ -130,7 +130,7 @@ export default {
       imgLayerData: null,
       layersOrder: [
         'bathymetryFilled',
-        'filled',
+        'filled_ocn',
         'currents',
         'bathymetryContourLines',
         'bathymetryContourLabels',
@@ -145,6 +145,10 @@ export default {
         'argo',
         // --- BASE MAP
         'country-boundaries',
+        
+        // --- ATMOSPHERE
+        'filled_atm',
+        
         'tunnel',
         'road',
         'bridge',
@@ -361,6 +365,15 @@ export default {
     argoPlotData() {
       return this.$store.state.argo.plotData
     },
+
+    currentsAnimationOn: {
+      get() {
+        return this.$store.state.map.currentsAnimationOn
+      },
+      set(status) {
+        this.$store.commit('map/setCurrentsAnimationOn', status)
+      },
+    },
   },
 
   // ###############################################################
@@ -388,13 +401,14 @@ export default {
           'layers/setTime',
           this.$store.state.map.now.format('HH')
         )
-        if (this.selected.depthProperties.hasDepth && this.$store.state.PP.PPon)
-          this.$store.commit(
-            'layers/setDepth',
-            this.selected.depthProperties.depthValues.length - 1
-          )
-        else this.$store.commit('layers/setDepth', 0)
-        this.$store.commit('map/setRedraw,true')
+        // if (this.selected.depthProperties.hasDepth)
+        //   this.$store.commit(
+        //     'layers/setDepth',
+        //     this.selected.depthProperties.depthValues.length - 1
+        //   )
+        // else
+        this.$store.commit('layers/setDepth', 0)
+        this.$store.commit('map/setRedraw',true)
         // } else if (this.selected.field === 'Iceberg') {
         //   this.addIceberg()
       } else {

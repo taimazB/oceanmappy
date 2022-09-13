@@ -12,7 +12,7 @@
         class="py-0"
         :style="{ width: `calc(100% - ${controlWidth + 150}px)` }"
       >
-        <v-slider
+        <!-- <v-slider
           v-model="selectedDateTimeSlider"
           :max="sliderDates.length - 1"
           ticks="always"
@@ -21,6 +21,15 @@
           :thumb-label="true"
           dense
           :disabled="!mapIdle"
+        > -->
+        <v-slider
+          v-model="selectedDateTimeSlider"
+          :max="sliderDates.length - 1"
+          ticks="always"
+          :tick-size="2"
+          :tick-labels="sliderDates"
+          :thumb-label="true"
+          dense
         >
           <template #thumb-label="{ value }">
             {{ sliderTimes[value] }}

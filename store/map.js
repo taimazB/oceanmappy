@@ -105,7 +105,7 @@ export const state = () => ({
   },
 
   currentsDirectionOn: true,
-  currentsAnimationOn: false,
+  currentsAnimationOn: true,
 
   showToolbox: false,
 

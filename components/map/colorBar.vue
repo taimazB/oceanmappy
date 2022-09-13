@@ -313,8 +313,13 @@ export default {
         )}_${this.username}`
       )
 
-      const colorbar = this.field.colorbar
-      colorbar.colormap = JSON.parse(JSON.stringify(this.colormap))
+      console.log(this.field)
+      // const colorbar = this.field.colorbar
+      this.$store.commit('layers/setColormap', {
+        field: this.field,
+        colormap: this.colormap,
+      })
+      // colorbar.colormap = JSON.parse(JSON.stringify(this.colormap))
     },
 
     removeColor(i) {
