@@ -99,9 +99,10 @@
       <v-divider vertical />
 
       <!-- DEPTH -->
-      <section style="width: 100px; place-self: center">
+
+      <section v-if="selected.depthProperties.hasDepth" style="width: 100px; place-self: center">
         <v-btn elevation="0" @click="toggleDepthSlider">{{getDepth()}}</v-btn>
-      </section>
+      
 
       <v-slider
         v-if="showDepthSlider"
@@ -115,6 +116,7 @@
         style="position: absolute; right: 35px; width: 30px; bottom: 50px"
       >
       </v-slider>
+    </section>
     </v-row>
   </v-sheet>
 </template>
@@ -385,7 +387,7 @@ export default {
       const depth= this.availDepths[this.iDepth]
       if(depth===0)
       return 'Surface'
-      else return `${depth} m`
+      else return `${depth} hPa`
     }
 
     // nextDay() {

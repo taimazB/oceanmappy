@@ -390,6 +390,8 @@ export const state = () => ({
   demo: false,
 
   selectedLayersTab: 0,
+
+  maxWindSpeed:20,
 })
 
 export const mutations = {
@@ -685,6 +687,10 @@ export const mutations = {
   setSelectedLayersTab(state, value) {
     state.selectedLayersTab = value
   },
+
+  setMaxWindSpeed(state,value){
+    state.maxWindSpeed=value
+  }
 }
 
 export const actions = {

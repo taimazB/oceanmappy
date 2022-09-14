@@ -52,6 +52,8 @@ export function clearAnimCanvas() {
 }
 
 export function animPrepare(width, height, cnvTmp, tileAddress) {
+  const field = this.$store.state.layers.selected.field
+  
   // --- Create an image for webgl
   this.wind.numParticles = 15000 // 40000
   const webglImage = new Image()
@@ -85,7 +87,7 @@ export function animPrepare(width, height, cnvTmp, tileAddress) {
   if (minLon >= maxLon) minLon -= 360
   
   try {
-    this.map.addSource('currents', {
+    this.map.addSource(field, {
       type: 'canvas',
       canvas: this.cnvCurrents,
       coordinates: [
@@ -100,9 +102,9 @@ export function animPrepare(width, height, cnvTmp, tileAddress) {
 
     this.map.addLayer(
       {
-        id: 'currents',
+        id: field,
         type: 'raster',
-        source: 'currents',
+        source: field,
         paint: {
           'raster-fade-duration': 0,
           'raster-opacity': this.activeLayerOpacity
@@ -113,7 +115,7 @@ export function animPrepare(width, height, cnvTmp, tileAddress) {
     this.sortLayers()
   } catch (error) {
     this.$store.commit('map/setBounds', this.map.getBounds())
-    this.map.getSource('currents').setCoordinates([
+    this.map.getSource(field).setCoordinates([
       [minLon, maxLat],
       [maxLon, maxLat],
       [maxLon, minLat],

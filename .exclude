@@ -1,0 +1,8 @@
+.exclude*
+push*.sh
+gitCommit.sh
+.history
+.git
+.gitignore
+
+node_modules

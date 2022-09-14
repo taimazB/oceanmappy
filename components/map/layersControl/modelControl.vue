@@ -4,6 +4,7 @@
       <v-col cols="5" class="text-h4" style="position: relative">
         <!-- COLORBAR -->
         <colorBar
+          v-if="field.name != 'wind'"
           :field="field"
           class="d-flex ml-4"
           style="position: absolute; height: 90%"
@@ -68,10 +69,7 @@
 
     <!-- CURRENTS CONFIG -->
     <section v-if="field.name === selectedField">
-      <section
-        v-if="field.name === 'Currents' || field.name === 'Wind'"
-        class="ma-0 pa-0 px-2 pt-4"
-      >
+      <section v-if="field.name === 'Currents'" class="ma-0 pa-0 px-2 pt-4">
         <!-- <v-row>
           <v-spacer></v-spacer>
           <v-btn
@@ -161,8 +159,31 @@
         </v-row> -->
       </section>
 
+      <!-- WIND CONFIG -->
+      <section v-if="field.name === 'wind'" class="ma-0 pa-0 px-2 pt-4">
+        <v-row class="ma-0 pa-0 px-2">
+          <v-col
+            cols="4"
+            class="ma-0 pa-0 pl-1 fontSizeXS"
+            style="place-self: center"
+            >Max Speed</v-col
+          >
+          <v-col cols="8">
+            <v-slider
+              v-model="maxWindSpeed"
+              max="100"
+              min="5"
+              hide-details
+              class="align-center"
+              step="1"
+            >
+            </v-slider>
+          </v-col>
+        </v-row>
+      </section>
+
       <!-- LAYER OPACITY -->
-      <v-row class="ma-0 pa-0 px-2">
+      <v-row v-if="field.name !== 'wind'" class="ma-0 pa-0 px-2">
         <v-col
           cols="4"
           class="ma-0 pa-0 pl-1 fontSizeXS"
@@ -206,6 +227,7 @@ export default {
   // ######################## --- COMPUTED --- ########################
   computed: {
     selectedField() {
+      console.log(this.$store.state.layers.selected)
       if (this.$store.state.layers.selected === null) return null
       else return this.$store.state.layers.selected.field
     },
@@ -239,6 +261,15 @@ export default {
       },
       set(value) {
         this.$store.commit('map/setActiveLayerOpacity', value)
+      },
+    },
+
+    maxWindSpeed: {
+      get() {
+        return this.$store.state.map.maxWindSpeed
+      },
+      set(value) {
+        this.$store.commit('map/setMaxWindSpeed', value)
       },
     },
   },

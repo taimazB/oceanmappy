@@ -6,7 +6,6 @@ export function addFilledContour() {
   const date = this.$store.state.layers.interDate
   const time = this.$store.state.layers.interTime
   const isAtmosphere = this.$store.state.layers.categories.filter(c=>c.name===category)[0].atmosphere
-  console.log(category,field,model,time,date,isAtmosphere);
   const colorbar = this.$store.state.layers.categories
     .filter((c) => c.name === category)[0]
     .fields.filter((f) => f.name === field)[0].colorbar

@@ -131,7 +131,7 @@ export default {
       layersOrder: [
         'bathymetryFilled',
         'filled_ocn',
-        'currents',
+        'Currents',
         'bathymetryContourLines',
         'bathymetryContourLabels',
         'altimetry',
@@ -147,6 +147,7 @@ export default {
         'country-boundaries',
         // --- ATMOSPHERE
         'filled_atm',
+        'wind',
         // --- MAP STUFF
         'tunnel',
         'road',
@@ -284,6 +285,10 @@ export default {
       return this.$store.state.map.activeLayerOpacity
     },
 
+    maxWindSpeed(){
+return this.$store.state.map.maxWindSpeed
+    },
+
     showLayers() {
       return this.$store.state.map.showLayers
     },
@@ -389,7 +394,7 @@ export default {
 
       if (
         this.selected.field === 'Currents' ||
-        this.selected.field === 'Wind'
+        this.selected.field === 'wind'
       ) {
         // this.addBathymetry()
         this.$store.commit(
@@ -407,7 +412,7 @@ export default {
         //   )
         // else
         this.$store.commit('layers/setDepth', 0)
-        this.$store.commit('map/setRedraw',true)
+        this.$store.commit('map/setRedraw', true)
         // } else if (this.selected.field === 'Iceberg') {
         //   this.addIceberg()
       } else {
@@ -432,10 +437,12 @@ export default {
         if (this.selected !== null) {
           if (
             this.selected.field === 'Currents' ||
-            this.selected.field === 'Wind'
+            this.selected.field === 'wind'
           ) {
-            if (this.currentsDirectionOn) this.loadImageCurrents()
-            this.addFilledContour()
+            // if (this.currentsDirectionOn)
+            this.loadImageCurrents()
+
+            if (this.selected.field === 'Currents') this.addFilledContour()
             // } else if (this.selected.field === 'Iceberg') {
             //   return null
           } else {
@@ -482,7 +489,7 @@ export default {
       if (this.selected) {
         // if (
         //   this.selected.field === 'Currents' ||
-        //   this.selected.field === 'Wind'
+        //   this.selected.field === 'wind'
         // )
         //   if (this.currentsAnimationOn)
         //     this.map.setPaintProperty(
@@ -510,6 +517,10 @@ export default {
         })
         // }
       }
+    },
+
+    maxWindSpeed(){
+      this.$store.dispatch('map/setRedrawTrue')
     },
 
     distanceOn() {
@@ -549,7 +560,7 @@ export default {
       if (
         this.selected &&
         (this.selected.field === 'Currents' ||
-          this.selected.field === 'Wind') &&
+          this.selected.field === 'wind') &&
         !this.currentsAnimationOn
       ) {
         const gj = this.generateGJ()
@@ -574,7 +585,7 @@ export default {
       if (
         this.selected &&
         (this.selected.field === 'Currents' ||
-          this.selected.field === 'Wind') &&
+          this.selected.field === 'wind') &&
         !this.currentsAnimationOn
       ) {
         const gj = this.generateGJ()
@@ -608,8 +619,9 @@ export default {
     },
 
     currentsDirectionOn() {
-      if (this.currentsDirectionOn) this.loadImageCurrents()
-      else this.removeCurrents()
+      // if (this.currentsDirectionOn)
+      this.loadImageCurrents()
+      // else this.removeCurrents()
     },
 
     currentsAnimationOn() {
@@ -804,7 +816,7 @@ export default {
       deep: true,
     },
 
-    'argoPlotData.index'(){
+    'argoPlotData.index'() {
       this.updateArgoProfilePoint()
     },
   },
@@ -995,7 +1007,7 @@ export default {
       if (
         this.selected !== null &&
         (this.selected.field === 'Currents' ||
-          this.selected.field === 'Wind') &&
+          this.selected.field === 'wind') &&
         this.currentsAnimationOn
       )
         this.clearAnimCanvas()
@@ -1023,7 +1035,10 @@ export default {
     onMapMoveEnd() {
       this.$store.commit('map/setBounds', this.map.getBounds())
       this.$store.commit('map/setMapCenter', this.map.getCenter())
-      if (this.selected !== null && this.selected.field === 'Currents') {
+      if (
+        this.selected !== null &&
+        (this.selected.field === 'Currents' || this.selected.field === 'wind')
+      ) {
         // this.resetCurrents()
         // this.drawCurrents()
         // this.loadImageCurrents()
@@ -1099,7 +1114,7 @@ export default {
         let tile
         if (
           this.selected.field === 'Currents' ||
-          this.selected.field === 'Wind'
+          this.selected.field === 'wind'
         ) {
           ;['U', 'V'].forEach((dir) => {
             tile = `${process.env.tuvaq2Url}/mapTiles/${field}/${model}/tiles${dir}/${model}_${field}_${date}_${time}${depth}/${zoom}/${X}/${Y}.png`
@@ -1145,7 +1160,7 @@ export default {
         if (this.imgLayerData[0].length > 0) {
           if (
             this.selectedField.field === 'Currents' ||
-            this.selectedField.field === 'Wind'
+            this.selectedField.field === 'wind'
           ) {
             const u =
               this.selectedField.colorbar.minOrg +

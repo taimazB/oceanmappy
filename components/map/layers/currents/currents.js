@@ -18,16 +18,16 @@ export function loadImageCurrents() {
   const date = this.$store.state.layers.interDate
   const time = this.$store.state.layers.interTime
   const colorbar = this.$store.state.layers.categories
-    .filter((c) => c.name === category)[0].fields
-    .filter((f) => f.name === field)[0].colorbar
+    .filter((c) => c.name === category)[0]
+    .fields.filter((f) => f.name === field)[0].colorbar
   const minOrg = colorbar.minOrg
-  const stops = []
-  const colors = []
-  colorbar.colormap.forEach((obj) => {
-    stops.push(obj.value)
-    colors.push(obj.color.replace('#', ''))
-  })
-  
+  // const stops = []
+  // const colors = []
+  // colorbar.colormap.forEach((obj) => {
+  //   stops.push(obj.value)
+  //   colors.push(obj.color.replace('#', ''))
+  // })
+
   if (field === null || model === null || date === null || time === null) return
 
   // --- Take care of crossing -180 longitude
@@ -64,14 +64,20 @@ export function loadImageCurrents() {
         --numLoading === 0 &&
           this.onAllLoadedCurrents(tileAddress, Xs, images, zoom)
       }
-      let url = `${process.env.tuvaq2Url}/imgCurrents?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&z=${tileAddress.ne[2]}&x=${Xs[ix]}&y=${y}&minOrg=${minOrg}`
-      console.log(url);
-      stops.forEach((stop) => {
-        url = `${url}&stop=${stop}`
-      })
-      colors.forEach((color) => {
-        url = `${url}&color=${color}`
-      })
+      let url
+      if (field === 'Currents')
+        url = `${process.env.tuvaq2Url}/imgCurrents?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&z=${tileAddress.ne[2]}&x=${Xs[ix]}&y=${y}&minOrg=${minOrg}`
+      else if (field === 'wind') {
+        const maxWindSpeed = this.$store.state.map.maxWindSpeed
+        url = `${process.env.tuvaq2Url}/imgWind?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&z=${tileAddress.ne[2]}&x=${Xs[ix]}&y=${y}&minOrg=${minOrg}&maxSpeed=${maxWindSpeed}`
+      }
+
+      // stops.forEach((stop) => {
+      //   url = `${url}&stop=${stop}`
+      // })
+      // colors.forEach((color) => {
+      //   url = `${url}&color=${color}`
+      // })
       this.$axios({
         method: 'get',
         url,
@@ -129,8 +135,12 @@ export function onAllLoadedCurrents(tileAddress, Xs, images, zoom) {
 }
 
 export function removeCurrents() {
-  if (Object.keys(this.map.getStyle().sources).includes('currents')) {
-    this.map.removeLayer('currents')
-    this.map.removeSource('currents')
+  if (Object.keys(this.map.getStyle().sources).includes('Currents')) {
+    this.map.removeLayer('Currents')
+    this.map.removeSource('Currents')
+  }
+  if (Object.keys(this.map.getStyle().sources).includes('wind')) {
+    this.map.removeLayer('wind')
+    this.map.removeSource('wind')
   }
 }
