@@ -41,6 +41,7 @@ import { updateDistance } from '../profile/distance'
 // CURRENTS
 import {
   loadImageCurrents,
+  loadImageWind,
   onAllLoadedCurrents,
   removeCurrents,
 } from './currents/currents'
@@ -930,6 +931,7 @@ return this.$store.state.map.maxWindSpeed
   methods: {
     // --- CURRENTS
     loadImageCurrents,
+    loadImageWind,
     onAllLoadedCurrents,
     removeCurrents,
 
