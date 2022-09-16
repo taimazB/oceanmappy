@@ -103,53 +103,66 @@ export function loadImageWind() {
   const maxLat = bnds._ne.lat
   const zoom = Math.min(Math.round(this.map.getZoom()), 9)
   const maxWindSpeed = this.$store.state.map.maxWindSpeed
-  const step = 0.01
+  // const step = 0.01
 
-  const category = this.selected.category
+  // const category = this.selected.category
   const field = this.selected.field
   const model = this.selected.modelDir
   const date = this.$store.state.layers.interDate
   const time = this.$store.state.layers.interTime
-  const colorbar = this.$store.state.layers.categories
-    .filter((c) => c.name === category)[0]
-    .fields.filter((f) => f.name === field)[0].colorbar
-  const minOrg = colorbar.minOrg
+  // const colorbar = this.$store.state.layers.categories
+  //   .filter((c) => c.name === category)[0]
+  //   .fields.filter((f) => f.name === field)[0].colorbar
+  // const minOrg = colorbar.minOrg
 
   if (field === null || model === null || date === null || time === null) return
 
-  const tileAddress = {}
-  tileAddress.ne = tilebelt
-    .pointToTileFraction(maxLon, maxLat, zoom)
-    .map((value) => parseInt(value))
-  tileAddress.sw = tilebelt
-    .pointToTileFraction(minLon, minLat, zoom)
-    .map((value) => parseInt(value))
+  // const tileAddress = {}
+  // tileAddress.ne = tilebelt
+  //   .pointToTileFraction(maxLon, maxLat, zoom)
+  //   .map((value) => parseInt(value))
+  // tileAddress.sw = tilebelt
+  //   .pointToTileFraction(minLon, minLat, zoom)
+  //   .map((value) => parseInt(value))
 
   // --- Take care of crossing -180 longitude
-  const Xs = []
-  if (tileAddress.ne[0] < tileAddress.sw[0]) {
-    for (let x = tileAddress.sw[0]; x < 2 ** zoom; x++) Xs.push(x)
-    for (let x = 0; x <= tileAddress.ne[0]; x++) Xs.push(x)
-  } else {
-    for (let x = tileAddress.sw[0]; x <= tileAddress.ne[0]; x++) Xs.push(x)
-  }
+  // const Xs = []
+  // if (tileAddress.ne[0] < tileAddress.sw[0]) {
+  //   for (let x = tileAddress.sw[0]; x < 2 ** zoom; x++) Xs.push(x)
+  //   for (let x = 0; x <= tileAddress.ne[0]; x++) Xs.push(x)
+  // } else {
+  //   for (let x = tileAddress.sw[0]; x <= tileAddress.ne[0]; x++) Xs.push(x)
+  // }
 
-  const YsLength = tileAddress.sw[1] - tileAddress.ne[1] + 1
-  const Ys = [...Array(YsLength).keys()].map((y) => y + tileAddress.ne[1])
+  // const YsLength = tileAddress.sw[1] - tileAddress.ne[1] + 1
+  // const Ys = [...Array(YsLength).keys()].map((y) => y + tileAddress.ne[1])
 
-  let dir = `${model}_${field}_${date}_${time}`
-  if (this.$store.state.layers.selected.depthProperties.hasDepth)
-    dir = `${dir}_${
-      this.$store.state.layers.selected.depthProperties.depthValues[
-        this.$store.state.layers.selected.depthProperties.iDepth
-      ]
-    }`
+  // let dir = `${model}_${field}_${date}_${time}`
+  // if (this.$store.state.layers.selected.depthProperties.hasDepth)
+  //   dir = `${dir}_${
+  //     this.$store.state.layers.selected.depthProperties.depthValues[
+  //       this.$store.state.layers.selected.depthProperties.iDepth
+  //     ]
+  //   }`
 
+  // const url = `${
+  //   process.env.tuvaq2Url
+  // }/imgWind2?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&zoom=${zoom}&Xs=${Xs.join(
+  //   ','
+  // )}&Ys=${Ys.join(',')}&minOrg=${minOrg}&step=${step}&maxSpeed=${maxWindSpeed}`
+let fileName
+fileName = `${model}_${field}_${date}_${time}`
+if (this.$store.state.layers.selected.depthProperties.hasDepth)
+fileName = `${fileName}_${
+  this.$store.state.layers.selected.depthProperties.depthValues[
+    this.$store.state.layers.selected.depthProperties.iDepth
+  ]
+}`
+
+const bndsUrl = `${minLon},${minLat},${maxLon},${maxLat}`
   const url = `${
     process.env.tuvaq2Url
-  }/imgWind2?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&zoom=${zoom}&Xs=${Xs.join(
-    ','
-  )}&Ys=${Ys.join(',')}&minOrg=${minOrg}&step=${step}&maxSpeed=${maxWindSpeed}`
+  }/imgWindAnimUV?id=${sessionID}&field=${field}&model=${model}&fileName=${fileName}&bnds=${bndsUrl}&zoom=${zoom}&maxSpeed=${maxWindSpeed}`
 
   this.$axios({
     method: 'get',
@@ -159,10 +172,13 @@ export function loadImageWind() {
     const img = new Image()
     img.crossOrigin = 'Anonymous'
     img.onload = () => {
+      console.log(img);
       // --- Create a new canvas to fill with all the tiles
       const tileSize = 512
-      const width = tileSize * Xs.length
-      const height = tileSize * Ys.length
+      // const width = tileSize * Xs.length
+      // const height = tileSize * Ys.length
+      const width = img.width
+      const height = img.height
       const cnvTmp = document.createElement('canvas')
       cnvTmp.width = width
       cnvTmp.height = height
@@ -197,11 +213,11 @@ export function loadImageWind() {
       )
       // })
 
-      if (this.currentsAnimationOn) {
-        this.animPrepare(width, height, cnvTmp, tileAddress)
-      } else {
-        this.staticPrepare(cnvTmp, ctxTmp, tileSize, tileAddress, Xs)
-      }
+      // if (this.currentsAnimationOn) {
+        this.animPrepare(width, height, cnvTmp, {minLon,minLat,maxLon,maxLat})
+      // } else {
+        // this.staticPrepare(cnvTmp, ctxTmp, tileSize, tileAddress, Xs)
+      // }
     }
     img.onerror = () => {}
 

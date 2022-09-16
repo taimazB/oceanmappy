@@ -51,11 +51,11 @@ export function clearAnimCanvas() {
   }, 1)
 }
 
-export function animPrepare(width, height, cnvTmp, tileAddress) {
+export function animPrepare(width, height, cnvTmp, bnds) {
   const field = this.$store.state.layers.selected.field
-  
+
   // --- Create an image for webgl
-  this.wind.numParticles = 15000 // 40000
+  this.wind.numParticles = 5000 // 40000
   const webglImage = new Image()
   const windData = {
     width,
@@ -80,21 +80,21 @@ export function animPrepare(width, height, cnvTmp, tileAddress) {
     this.frame()
   }, 1)
 
-  let minLon = tilebelt.tileToBBOX(tileAddress.sw)[0]
-  const minLat = tilebelt.tileToBBOX(tileAddress.sw)[1]
-  const maxLon = tilebelt.tileToBBOX(tileAddress.ne)[2]
-  const maxLat = tilebelt.tileToBBOX(tileAddress.ne)[3]
-  if (minLon >= maxLon) minLon -= 360
+  // let minLon = tilebelt.tileToBBOX(tileAddress.sw)[0]
+  // const minLat = tilebelt.tileToBBOX(tileAddress.sw)[1]
+  // const maxLon = tilebelt.tileToBBOX(tileAddress.ne)[2]
+  // const maxLat = tilebelt.tileToBBOX(tileAddress.ne)[3]
+  if (bnds.minLon >= bnds.maxLon) bnds.minLon -= 360
   
   try {
     this.map.addSource(field, {
       type: 'canvas',
       canvas: this.cnvCurrents,
       coordinates: [
-        [minLon, maxLat],
-        [maxLon, maxLat],
-        [maxLon, minLat],
-        [minLon, minLat]
+        [bnds.minLon, bnds.maxLat],
+        [bnds.maxLon, bnds.maxLat],
+        [bnds.maxLon, bnds.minLat],
+        [bnds.minLon, bnds.minLat]
       ],
       // --- Set to true if the canvas source is animated. If the canvas is static, animate should be set to false to improve performance.
       animate: true
@@ -116,10 +116,10 @@ export function animPrepare(width, height, cnvTmp, tileAddress) {
   } catch (error) {
     this.$store.commit('map/setBounds', this.map.getBounds())
     this.map.getSource(field).setCoordinates([
-      [minLon, maxLat],
-      [maxLon, maxLat],
-      [maxLon, minLat],
-      [minLon, minLat]
+      [bnds.minLon, bnds.maxLat],
+      [bnds.maxLon, bnds.maxLat],
+      [bnds.maxLon, bnds.minLat],
+      [bnds.minLon, bnds.minLat]
     ])
   }
 }
