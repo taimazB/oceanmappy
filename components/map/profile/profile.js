@@ -1,22 +1,22 @@
 export function updateProfile() {
-  let category, field, model, date, time, depth, dir, minOrg, step
+  let category, field, model, date, time, level, dir, minOrg, step
   const gj = this.$store.state.map.drawGJ
 
   if (this.$store.state.layers.selected !== null) {
     category = this.$store.state.layers.selected.category
     field = this.$store.state.layers.selected.field
-    model = this.$store.state.layers.selected.modelDir
+    model = this.$store.state.layers.selected.directory
 
     date = this.$store.state.layers.interDate
     time = this.$store.state.layers.interTime
-    if (this.$store.state.layers.selected.depthProperties.hasDepth)
-      depth = `_${
-        this.$store.state.layers.selected.depthProperties.depthValues[
-          this.$store.state.layers.selected.depthProperties.iDepth
+    if (this.$store.state.layers.selected.hasLevels)
+      level = `_${
+        this.$store.state.layers.selected.levels.values[
+          this.$store.state.layers.selected.levels.iLevel
         ]
       }`
-    else depth = ''
-    dir = `${model}_${field}_${date}_${time}${depth}`
+    else level = ''
+    dir = `${model}_${field}_${date}_${time}${level}`
 
     const selectedField = this.$store.state.layers.categories
       .filter((c) => c.name === category)[0].fields

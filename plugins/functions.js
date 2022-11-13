@@ -1,9 +1,24 @@
 import Vue from 'vue'
 import tilebelt from '@mapbox/tilebelt'
 import moment from 'moment'
+import lodash from 'lodash'
 
 Vue.mixin({
   methods: {
+    renewSessionID() {
+      let username
+      if (this.$store.state.profile && this.$store.state.profile.user) {
+        username = this.$store.state.profile.user.username
+      } else username = ''
+
+      this.$store.commit(
+        'map/setSessionID',
+        `${moment.utc().format('YYYYMMDDTHHmmss-SSS')}_${parseInt(
+          10000 * Math.random()
+        )}_${username}`
+      )
+    },
+
     gl_lat2y(lat) {
       const R = 6378137
       return (
@@ -86,7 +101,7 @@ Vue.mixin({
         zoom
       )
       const newUrl = `${process.env.tuvaq2Url}/mapTiles/Bathymetry/${
-        this.$store.state.layers.selectedBathymetry.modelDir
+        this.$store.state.layers.selectedBathymetry.directory
       }/tiles/filledValue/${zoom}/${parseInt(tileAddress[0])}/${parseInt(
         tileAddress[1]
       )}.png`
@@ -129,11 +144,12 @@ Vue.mixin({
       return separateWord.join(' ')
     },
 
-    lastProcessedColor(hr) {
+    lastProcessedColor(momentObj) {
+      const diff = (moment.utc() - momentObj) / 1000 / 3600
       switch (true) {
-        case hr <= 24:
+        case diff <= 24:
           return 'green'
-        case hr <= 48:
+        case diff <= 48:
           return 'orange'
         default:
           return 'red'
@@ -170,7 +186,8 @@ Vue.mixin({
     },
 
     getGliderType(type) {
-      if (type.toLowerCase().includes('slocum')) return 'slocum'
+      if(!type) return null
+      else if (type.toLowerCase().includes('slocum')) return 'slocum'
       else if (type.toLowerCase().includes('seaglider')) return 'seaglider'
       else if (type.toLowerCase().includes('waveglider')) return 'wavegliderSV3'
       else return null
@@ -188,7 +205,13 @@ Vue.mixin({
     },
 
     randomColor() {
-      return '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
+      return (
+        '#' + ((Math.random() * 0xffffff) << 0).toString(16).padStart(6, '0')
+      )
+    },
+
+    startCase(str) {
+      return lodash.startCase(str)
     },
   },
 })

@@ -1,6 +1,6 @@
 export const state = () => ({
   NOAAbathymetryRegion: null,
-  selectedBathymetryContourLevels: [
+  selectedBathymetryContours: [
     -20, -50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -600, -700,
     -800, -900, -1000, -2000, -3000, -4000, -5000, -7500, -10000,
   ],
@@ -11,7 +11,8 @@ export const state = () => ({
   showBathymetrySettings: false,
 
   now: null,
-  mapZoom: 4,
+  // mapZoom: 4,
+  zoomLevel: 2,
 
   // bnds: { _ne: { lat: 50, lng: 50 }, _sw: { lat: -50, lng: -50 } },
   bnds: '', // --- To crop layers based on map's visible area
@@ -105,7 +106,7 @@ export const state = () => ({
   },
 
   currentsDirectionOn: true,
-  currentsAnimationOn: true,
+  currentsAnimationOn: false,
 
   showToolbox: false,
 
@@ -122,7 +123,7 @@ export const state = () => ({
   mapIdle: false,
   activeLayerValueAtMouseStatus: false,
 
-  altimetryMapboxColormap: [],
+
 
   AISselectedYear: null,
   AISselectedMonthIndex: null,
@@ -378,6 +379,8 @@ export const state = () => ({
 
   fitBoundsCoords: null,
 
+  alert: { show: false, text: '', type: '' },
+
   currentsLocked: false,
 
   updatedDrawProperties: null,
@@ -391,7 +394,14 @@ export const state = () => ({
 
   selectedLayersTab: 0,
 
-  maxWindSpeed:20,
+  maxSpeedCurrent: 1.5,
+  maxSpeedWind: 20,
+  maxSpeedSeaiceVelocity:1,
+
+  isRemoveSentinel: false,
+
+  vectorStatic: false,
+  mapProjection:'2d'
 })
 
 export const mutations = {
@@ -399,12 +409,16 @@ export const mutations = {
     state.now = dateTime
   },
 
-  setMapZoom(state, map) {
-    state.mapZoom = map
+  // setMapZoom(state, map) {
+  //   state.mapZoom = map
+  // },
+
+  setZoomLevel(state, value) {
+    state.zoomLevel = value
   },
 
-  setSelectedBathymetryContourLevels(state, array) {
-    state.selectedBathymetryContourLevels = array
+  setSelectedBathymetryContours(state, array) {
+    state.selectedBathymetryContours = array
   },
 
   setBathymetryOpacity(state, value) {
@@ -450,8 +464,11 @@ export const mutations = {
     state.mouseInfoValue = value
   },
 
-  setRedraw(state, status) {
-    state.redraw = status
+  setRedrawTrue(state) {
+    state.redraw = true
+    setTimeout(() => {
+      state.redraw = false
+    }, 100)
   },
 
   setCleanStatus(state, status) {
@@ -644,9 +661,7 @@ export const mutations = {
     state.activeLayerValueAtMouseStatus = status
   },
 
-  setAltimetryMapboxColormap(state, array) {
-    state.altimetryMapboxColormap = array
-  },
+
 
   // --- AIS
   setAISselectedYear(state, value) {
@@ -658,6 +673,13 @@ export const mutations = {
 
   setDrawMode(state, value) {
     state.drawMode = value
+  },
+
+  setAlert(state, obj) {
+    state.alert = obj
+    setTimeout(() => {
+      state.alert.show = false
+    }, 3000)
   },
 
   setCurrentsLocked(state, status) {
@@ -676,8 +698,11 @@ export const mutations = {
     state.preventCloseOn = status
   },
 
-  forceMapResize(state,status) {
-    state.mapResize = status
+  forceMapResize(state) {
+    state.mapResize = true
+    setTimeout(() => {
+      state.mapResize = false
+    }, 1)
   },
 
   setDemo(state, status) {
@@ -688,23 +713,34 @@ export const mutations = {
     state.selectedLayersTab = value
   },
 
-  setMaxWindSpeed(state,value){
-    state.maxWindSpeed=value
+  setMaxSpeedCurrent(state, value) {
+    state.maxSpeedCurrent = value
+  },
+  setMaxSpeedWind(state, value) {
+    state.maxSpeedWind = value
+  },
+  setMaxSpeedSeaiceVelocity(state, value) {
+    state.maxSpeedSeaiceVelocity = value
+  },
+
+  setRemoveSentinel(state, status) {
+    state.isRemoveSentinel = status
+  },
+
+  setVectorStatic(state, status) {
+    state.vectorStatic = status
+  },
+
+  setMapProjection(state,value){
+    state.mapProjection=value
   }
 }
 
 export const actions = {
-  setRedrawTrue(context) {
-    context.commit('setRedraw',true)
+  triggerSentinelRemove(context) {
+    context.commit('setRemoveSentinel', false)
     setTimeout(() => {
-      context.commit('setRedraw',false)
-    }, 1);
+      context.commit('setRemoveSentinel', true)
+    }, 100)
   },
-
-  forceMapResize(context){
-    context.commit('forceMapResize',true)
-    setTimeout(() => {
-      context.commit('forceMapResize',false)
-    }, 1)
-  }
 }

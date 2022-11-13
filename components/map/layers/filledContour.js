@@ -1,14 +1,24 @@
 export function addFilledContour() {
   const sessionID = this.$store.state.map.sessionID
-  const category = this.$store.state.layers.selected.category
-  const field = this.$store.state.layers.selected.field
-  const model = this.$store.state.layers.selected.modelDir
-  const date = this.$store.state.layers.interDate
-  const time = this.$store.state.layers.interTime
-  const isAtmosphere = this.$store.state.layers.categories.filter(c=>c.name===category)[0].atmosphere
-  const colorbar = this.$store.state.layers.categories
-    .filter((c) => c.name === category)[0]
-    .fields.filter((f) => f.name === field)[0].colorbar
+  const selected = this.$store.state.layers.selected
+  // const category = this.$store.state.layers.categories.filter(
+  //   (c) => c.name === selected.category
+  // )[0]
+  const group = selected.field.group
+  // const field = category.fields.filter((f) => f.name === selected.field)[0]
+  // const fieldName = fieldName
+  // const model = selected.name
+  // const multiRegion = selected.regions.length > 1
+  // const iRegion = selected.iRegion
+  // const regionName = selected.regions[iRegion].name
+  
+  const level = selected.hasLevels
+    ? selected.region.levels.values[selected.region.levels.iLevel]
+    : null
+  // const date = this.$store.state.layers.interDate
+  // const time = this.$store.state.layers.interTime
+  const dateTime = this.$store.state.layers.interDateTime.format('YYYYMMDD_HH')
+  const colorbar = selected.field.colorbar
   const minOrg = colorbar.minOrg
   const step = colorbar.step
   const stops = []
@@ -19,19 +29,8 @@ export function addFilledContour() {
   })
 
   let url
-  // if (field === 'SST' && model === 'HYCOM') {
-  //   url = `${process.env.tuvaq2Url}/imgHYCOM?id=${sessionID}&field=${field}&model=${model}&date=${date}&time=${time}&iDepth=${iDepth}&z={z}&x={x}&y={y}&minOrg=${minOrg}&step=${step}`
-  // } else {
-  let dir = `${model}_${field}_${date}_${time}`
-  if (this.$store.state.layers.selected.depthProperties.hasDepth)
-    dir = `${dir}_${
-      this.$store.state.layers.selected.depthProperties.depthValues[
-        this.$store.state.layers.selected.depthProperties.iDepth
-      ]
-    }`
-  url = `${process.env.tuvaq2Url}/img?id=${sessionID}&field=${field}&model=${model}&dir=${dir}&z={z}&x={x}&y={y}&minOrg=${minOrg}&step=${step}`
-  // }
-
+  url = `${process.env.tuvaq2Url}/tile4nc_20221026?id=${sessionID}&field=${selected.field.name}&model=${selected.modelName}&isMultiRegion=${selected.isMultiRegion}&regionName=${selected.region.name}&dateTime=${dateTime}&level=${level}&z={z}&x={x}&y={y}&minOrg=${minOrg}&step=${step}`
+console.log(url);
   stops.forEach((stop) => {
     url = `${url}&stop=${stop}`
   })
@@ -45,8 +44,7 @@ export function addFilledContour() {
   const oldLayers = sources.filter((src) => src.includes('filled'))
 
   if (oldLayers.length === 0) {
-    const srcName = `filled_${isAtmosphere?'atm':'ocn'}_0`
-    this.map.addSource(srcName, {
+    this.map.addSource(`filled_${group}_0`, {
       type: 'raster',
       tiles: [url],
       tilesize: 512,
@@ -54,9 +52,9 @@ export function addFilledContour() {
 
     this.map.addLayer(
       {
-        id: srcName,
+        id: `filled_${group}_0`,
         type: 'raster',
-        source: srcName,
+        source: `filled_${group}_0`,
         paint: {
           'raster-resampling': 'nearest',
           'raster-opacity': this.activeLayerOpacity,
@@ -68,17 +66,16 @@ export function addFilledContour() {
   } else {
     const oldLayer = oldLayers[oldLayers.length - 1]
     const i = parseInt(oldLayer.split('_')[2]) + 1
-    const srcName = `filled_${isAtmosphere?'atm':'ocn'}_${i}`
-    this.map.addSource(srcName, {
+    this.map.addSource(`filled_${group}_${i}`, {
       type: 'raster',
       tiles: [url],
       tilesize: 512,
     })
 
     this.map.addLayer({
-      id: srcName,
+      id: `filled_${group}_${i}`,
       type: 'raster',
-      source: srcName,
+      source: `filled_${group}_${i}`,
       paint: {
         'raster-resampling': 'nearest',
         'raster-opacity': this.activeLayerOpacity,

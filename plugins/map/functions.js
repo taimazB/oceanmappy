@@ -85,7 +85,7 @@ Vue.mixin({
         zoom
       )
       const newUrl = `${process.env.tuvaq2Url}/mapTiles/Bathymetry/${
-        this.$store.state.layers.selectedBathymetry.modelDir
+        this.$store.state.layers.selectedBathymetry.directory
       }/tiles/filledValue/${zoom}/${parseInt(tileAddress[0])}/${parseInt(
         tileAddress[1]
       )}.png`

@@ -2,17 +2,28 @@
   <v-sheet light height="20px" style="background: lightgray">
     <v-row class="py-0 my-0" style="height: 100%">
       <!-- DATE & TIME -->
-      <v-col cols="auto" class="date d-none d-sm-block"
-          >{{ now.format('MMM DD, YYYY') }}
-        </v-col>
-        <v-col cols="auto" class="date text-smOnly-caption"
-          >{{ now.format('HH:mm:ss') }} UTC
-        </v-col>
+      <v-col cols="auto" class="date d-none d-sm-block">
+        <v-icon x-small>mdi-calendar-range</v-icon>
+        {{ now.format('MMM DD, YYYY') }}
+      </v-col>
+      <v-col cols="auto" class="date text-smOnly-caption">
+        <v-icon x-small>mdi-clock-time-four-outline</v-icon>
+        {{ now.format('HH:mm:ss') }} UTC
+      </v-col>
+
+      <v-divider vertical />
+
+      <!-- ZOOM LEVEL -->
+      <v-col cols="auto" class="date text-smOnly-caption">
+        <v-icon x-small>mdi-loupe</v-icon>
+        {{ zoomLevel }}
+      </v-col>
 
       <v-spacer />
 
       <!-- ACTIVE LAYER -->
       <v-col
+      v-show="false"
         align-self="end"
         class="ma-0 pa-0 mx-1"
         cols="auto"
@@ -36,15 +47,16 @@
 
       <v-divider vertical />
 
-      <!-- DEPTH -->
+      <!-- LEVEL -->
       <v-col
+      v-show="false"
         align-self="end"
         class="my-0 py-0 mx-1"
         cols="auto"
         style="text-align: right; width: 100px"
       >
         <section class="mobileFontSize text-sm-caption">
-          <p class="my-0" v-html="`${depthAtMouse} m`"></p>
+          <p class="my-0" v-html="`${levelAtMouse} m`"></p>
         </section>
       </v-col>
 
@@ -82,8 +94,8 @@ export default {
       return this.$store.state.map.layerValueAtMouse
     },
 
-    depthAtMouse() {
-      return this.$store.state.map.depthAtMouse
+    levelAtMouse() {
+      return this.$store.state.map.levelAtMouse
     },
 
     layerValue() {
@@ -99,6 +111,10 @@ export default {
 
     activeLayerValueAtMouseStatus() {
       return this.$store.state.map.activeLayerValueAtMouseStatus
+    },
+
+    zoomLevel() {
+      return this.$store.state.map.zoomLevel
     },
   },
 

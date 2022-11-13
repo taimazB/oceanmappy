@@ -21,20 +21,72 @@ export function activateProfileTime() {
   // this.map.on('click', this.mapClick)
 }
 
+// export function mapClick(e) {
+// const marker = document.createElement('div')
+// marker.className = 'marker'
+// marker.style.backgroundImage = `url(https://api.oceangns.com/images/circle.svg)`
+// marker.style.width = `16px`
+// marker.style.height = `16px`
+// marker.style.backgroundSize = '100%'
+
+//     this.lines.markers.push(
+//       new mapboxgl.Marker({
+//         color:"blue",
+//         draggable: true
+//       })
+//         .setLngLat(e.lngLat)
+//         //   .on('drag', () => {
+//         //     linesMarkerDrag(this)
+//         //   })
+//         .on('dragend', () => {
+//           updateProfileTime(this)
+//         })
+//         .addTo(this.map)
+//     )
+
+//   updateProfileTime(this)
+// }
+
+// export async function linesMarkerDrag(that) {
+//   const result = await that.updateLines(that.map, that.lines.markers)
+//   that.lines.linestringSource.data.features = result.features
+//   that.map
+//     .getSource('lines.linestringSource')
+//     .setData(that.lines.linestringSource.data)
+//   if (that.distanceOn) {
+//     that.lines.symbolSource.data.features = result.textFeatures
+//     that.map
+//       .getSource('lines.symbolSource')
+//       .setData(that.lines.symbolSource.data)
+//   }
+// }
+
+// export async function linesMarkerDragEnd(that) {
+//   const result = await that.updateLines(that.map, that.lines.markers)
+//   that.lines.linestringSource.data.features = result.features
+//   that.map
+//     .getSource('lines.linestringSource')
+//     .setData(that.lines.linestringSource.data)
+//   // if (that.distanceOn) {
+//   that.lines.symbolSource.data.features = result.textFeatures
+//   that.map.getSource('lines.symbolSource').setData(that.lines.symbolSource.data)
+//   // }
+// }
+
 export function updateProfileTime(that, marker) {
-  let field, model, date, time, depth
+  let field, model, date, time, level
   if (this.$store.state.layers.selected !== null) {
     field = this.$store.state.layers.selected.field
-    model = this.$store.state.layers.selected.modelDir
+    model = this.$store.state.layers.selected.directory
     date = this.$store.state.layers.interDate
     time = this.$store.state.layers.interTime
-    if (this.$store.state.layers.selected.depthProperties.hasDepth)
-      depth = `_${
-        this.$store.state.layers.selected.depthProperties.depthValues[
-          this.$store.state.layers.selected.depthProperties.iDepth
+    if (this.$store.state.layers.selected.hasLevels)
+      level = `_${
+        this.$store.state.layers.selected.region.levels.values[
+          this.$store.state.layers.selected.region.levels.iLevel
         ]
       }`
-    else depth = ''
+    else level = ''
 
     const lon = marker.getLngLat().lng
     const lat = marker.getLngLat().lat
@@ -59,7 +111,7 @@ export function updateProfileTime(that, marker) {
 
       if (field === 'Currents') {
         for (let i = 0; i <= times; i++) {
-          const url = `${process.env.tilesUrl}/models/${field}/${model}/tiles/${model}_${field}_${date}_${time}${depth}/${zoom}/${this.profileTime_tileX}/${this.profileTime_tileY}.png`
+          const url = `${process.env.tilesUrl}/models/${field}/${model}/tiles/${model}_${field}_${date}_${time}${level}/${zoom}/${this.profileTime_tileX}/${this.profileTime_tileY}.png`
           this.cnvTmps.push(document.createElement('canvas'))
           this.cnvTmps[i].width = 512
           this.cnvTmps[i].height = 512

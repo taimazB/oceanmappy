@@ -12,24 +12,15 @@
         class="py-0"
         :style="{ width: `calc(100% - ${controlWidth + 150}px)` }"
       >
-        <!-- <v-slider
-          v-model="selectedDateTimeSlider"
-          :max="sliderDates.length - 1"
-          ticks="always"
-          :tick-size="2"
-          :tick-labels="sliderDates"
-          :thumb-label="true"
-          dense
-          :disabled="!mapIdle"
-        > -->
         <v-slider
-          v-model="selectedDateTimeSlider"
-          :max="sliderDates.length - 1"
+          v-model="iDateTimeSlider"
+          :max="sliderDateTicks.length - 1"
           ticks="always"
           :tick-size="2"
-          :tick-labels="sliderDates"
+          :tick-labels="sliderDateTicks"
           :thumb-label="true"
           dense
+          @end="updateDateTime"
         >
           <template #thumb-label="{ value }">
             {{ sliderTimes[value] }}
@@ -37,9 +28,8 @@
         </v-slider>
       </section>
 
-      <section v-if="!sliderMode" :style="{ width: `calc(100% - ${150}px)` }">
+      <!-- <section v-if="!sliderMode" :style="{ width: `calc(100% - ${150}px)` }">
         <v-row>
-          <!-- DATE PICKER -->
           <v-col cols="6" class="py-0">
             <v-menu
               v-model="menu2"
@@ -62,7 +52,6 @@
               ></v-date-picker>
             </v-menu>
           </v-col>
-          <!-- TIME PICKER -->
           <v-col cols="6" class="py-0">
             <v-select
               v-model="selectedTime"
@@ -73,24 +62,21 @@
             ></v-select>
           </v-col>
         </v-row>
-      </section>
+      </section> -->
 
       <!-- CONTROL -->
       <section
         v-if="!breakpoint.smAndDown && sliderMode"
         :style="{ width: `${controlWidth}px`, 'place-self': 'center' }"
       >
-        <v-icon v-show="selectedDateTimeSlider > 0" @click="previous"
+        <v-icon v-show="iDateTimeSlider > 0" @click="previous"
           >mdi-chevron-left</v-icon
         >
-        <span style="font-weight: bold">
-          {{ sliderDateTimes[selectedDateTimeSlider].time }}
-        </span>
-        <span class="text-caption">
-          {{ formattedSelectedDate }}
+        <span style="font-size: small; font-weight:bold">
+          {{ sliderDateTimes[iDateTimeSlider].format('MMM DD, HH:00') }}
         </span>
         <v-icon
-          v-show="selectedDateTimeSlider < sliderDateTimes.length - 1"
+          v-show="iDateTimeSlider < sliderDateTimes.length - 1"
           @click="next"
           >mdi-chevron-right</v-icon
         >
@@ -98,25 +84,24 @@
 
       <v-divider vertical />
 
-      <!-- DEPTH -->
-
-      <section v-if="selected.depthProperties.hasDepth" style="width: 100px; place-self: center">
-        <v-btn elevation="0" @click="toggleDepthSlider">{{getDepth()}}</v-btn>
-      
+      <!-- LEVEL -->
+      <section v-if="hasLevels" style="width: 100px; place-self: center">
+        <v-btn elevation="0" @click="toggleLevelSlider">{{ getLevel() }}</v-btn>
+      </section>
 
       <v-slider
-        v-if="showDepthSlider"
-        v-model="iDepth"
+        v-if="showLevelSlider"
+        v-model="iLevel"
         vertical
-        :max="availDepths.length - 1"
+        :max="availLevels.length - 1"
         hide-details
         background-color="secondary"
         dark
         height="100%"
         style="position: absolute; right: 35px; width: 30px; bottom: 50px"
+        @end="updateLevel"
       >
       </v-slider>
-    </section>
     </v-row>
   </v-sheet>
 </template>
@@ -134,14 +119,15 @@ export default {
     menu: false,
     modal: false,
     menu2: false,
-    showDepthSlider: false,
+    showLevelSlider: false,
     // nextDayDisabled: false,
     // previousDayDisabled: false,
     // isPlaying: false
     // play: null,
     // nextTimeDisabled: false,
     // previousTimeDisabled: false,
-    // selectedDateTimeSlider:0,
+    iDateTimeSlider: 0,
+    iLevel: 0,
   }),
 
   // ##################################################################
@@ -160,66 +146,69 @@ export default {
       return this.breakpoint.smAndDown ? 0 : 150
     },
 
-    now() {
-      return this.$store.state.map.now
-    },
+    // now() {
+    //   return this.$store.state.map.now
+    // },
 
     selected() {
       return this.$store.state.layers.selected
     },
 
-    availDateTimes() {
-      // if (this.demo) {
-      //   // const n = this.selected.availDateTimes.length
-      //   // const a = parseInt(n / 2) - 20
-      //   // const b = parseInt(n / 2) + 20
-      //   // if (a >= 0 && b < n) {
-      //     return this.selected.availDateTimes.slice(0, 20)
-      //   // }
-      // }
-      return this.selected.availDateTimes
-    },
+    //     models(){
+    // return this.$store.state.layers.models
+    //     },
 
-    availDates() {
-      if (this.availDateTimes.length > 0) {
-        return underscore.uniq(
-          this.availDateTimes.map((d) => this.modelDate2datepickerDate(d.date))
-        )
-      } else {
-        return []
-      }
-    },
+    //     fields(){
+    // return this.$store.state.layers.fields
+    //     },
+
+    // availDateTimes() {
+    //   // if (this.demo) {
+    //   //   // const n = this.selected.availDateTimes.length
+    //   //   // const a = parseInt(n / 2) - 20
+    //   //   // const b = parseInt(n / 2) + 20
+    //   //   // if (a >= 0 && b < n) {
+    //   //     return this.selected.availDateTimes.slice(0, 20)
+    //   //   // }
+    //   // }
+    //   // return this.selected.regions[this.selected.iRegion].availDateTimes
+
+    //   const selectedModel = this.models.filter(m=>m.name===this.selected.modelName)[0]
+    //   const selectedFieldInModel = selectedModel.fields.filter(f=>f.name===this.selected.fieldName)[0]
+    //   if('availDateTime' in selectedFieldInModel.keys()) return selectedFieldInModel.availDateTimes
+    //   else return []
+    // },
+
+ 
 
     sliderDateTimes() {
       let dateTimes = []
       // ---  Last 3 days in large screens; Last day in mobile
       if (this.$vuetify.breakpoint.smAndDown)
-        dateTimes = this.availDateTimes.filter((d) =>
-          moment.utc(d.date).isAfter(moment.utc().subtract(1, 'days'))
+        dateTimes = this.selected.availDateTimes.filter((d) =>
+          d.isAfter(moment.utc().subtract(1, 'days'))
         )
       else
-        dateTimes = this.availDateTimes.filter((d) =>
-          moment.utc(d.date).isAfter(moment.utc().subtract(4, 'days'))
+        dateTimes = this.selected.availDateTimes.filter((d) =>
+          d.isAfter(moment.utc().subtract(4, 'days'))
         )
 
       if (dateTimes.length === 0) {
-        const n = this.availDateTimes.length
+        const n = this.selected.availDateTimes.length
         const a = n - 20 >= 0 ? n - 20 : 0
-        dateTimes = this.availDateTimes.slice(a, n)
+        dateTimes = this.selected.availDateTimes.slice(a, n)
       }
       return dateTimes
     },
 
-    sliderDates() {
-      if (this.availDateTimes.length > 0) {
+    sliderDateTicks() {
+      if (this.sliderDateTimes.length > 0) {
         // const a = underscore.uniq(
         //   this.$store.state.layers.availDateTimes.map(d => d.date)
         // ).filter(d=>moment.utc(d).isAfter(moment.utc().subtract(2, 'days'))).map(d=>moment.utc(d).format('MMM DD'))
         // console.log(a);
         // return a
-        const ticks = this.sliderDateTimes.map((d) =>
-          moment.utc(d.date).format('MMM DD')
-        )
+        const ticks = this.sliderDateTimes.map((d) => d.format('MMM DD'))
         for (let i = this.sliderDateTimes.length - 1; i > 0; i--) {
           if (ticks[i] === ticks[i - 1]) ticks[i] = ''
         }
@@ -230,101 +219,89 @@ export default {
     },
 
     sliderTimes() {
-      return this.sliderDateTimes.map((d) => d.time)
+      return this.sliderDateTimes.map((d) => d.format('HH'))
     },
 
-    availTimes() {
-      if (this.selected !== null) {
-        if (this.availDateTimes !== null) {
-          return this.availDateTimes
-            .filter((d) => d.date === this.$store.state.layers.interDate)
-            .map((d) => d.time)
-        } else {
-          return []
-        }
-      } else {
-        return []
-      }
+    // availDates() {
+    //   if (this.selected.availDateTimes.length > 0) {
+    //     return underscore.uniq(
+    //       this.selected.availDateTimes.map((d) =>
+    //         this.modelDate2datepickerDate(d.date)
+    //       )
+    //     )
+    //   } else {
+    //     return []
+    //   }
+    // },
+
+    // availTimes() {
+    //   if (this.selected !== null) {
+    //     if (this.selected.availDateTimes !== null) {
+    //       return this.selected.availDateTimes
+    //         .filter((d) => d.date === this.$store.state.layers.interDate)
+    //         .map((d) => d.time)
+    //     } else {
+    //       return []
+    //     }
+    //   } else {
+    //     return []
+    //   }
+    // },
+
+    // selectedTime: {
+    //   get() {
+    //     if (this.availTimes !== null) {
+    //       return this.$store.state.layers.interTime
+    //     } else return ''
+    //   },
+    //   set(hr) {
+    //     this.$store.commit('layers/setTime', hr.toString().padStart(2, '0'))
+    //     this.$store.commit('map/setRedrawTrue')
+    //     // this.chkBtns()
+    //   },
+    // },
+
+    // selectedDate: {
+    //   get() {
+    //     if (this.$store.state.layers.interDate !== null)
+    //       return this.modelDate2datepickerDate(
+    //         this.$store.state.layers.interDate
+    //       )
+    //     else return ''
+    //   },
+    //   set(value) {
+    //     this.$store.commit('layers/setDateTime',)
+    //     // this.$store.commit(
+    //     //   'layers/setDate',
+    //     //   this.datepickerDate2modelDate(value)
+    //     // )
+    //     this.$store.commit('map/setRedrawTrue')
+    //     // this.chkBtns()
+    //   },
+    // },
+
+    hasLevels() {
+      return this.selected.hasLevels
     },
 
-    selectedDateTimeSlider: {
-      get() {
-        if (this.$store.state.layers.interDate !== null) {
-          const date = this.$store.state.layers.interDate
-          const time = this.$store.state.layers.interTime
-          const indx = this.sliderDateTimes
-            .map((dt) => `${dt.date}_${dt.time}`)
-            .indexOf(`${date}_${time}`)
-          if (indx >= 0) {
-            return indx
-          } else {
-            this.$store.commit('layers/setDate', this.sliderDateTimes[0].date)
-            this.$store.commit('layers/setTime', this.sliderDateTimes[0].time)
-            this.$store.dispatch('map/setRedrawTrue')
-            this.$store.commit('map/setMapIdle', false)
-          }
-        }
-        return 0
-      },
-      set(indx) {
-        this.$store.commit('layers/setDate', this.sliderDateTimes[indx].date)
-        this.$store.commit('layers/setTime', this.sliderDateTimes[indx].time)
-        this.$store.dispatch('map/setRedrawTrue')
-        this.$store.commit('map/setMapIdle', false)
-      },
+    availLevels() {
+      return this.selected.region.levels.values
     },
 
-    selectedTime: {
-      get() {
-        if (this.availTimes !== null) {
-          return this.$store.state.layers.interTime
-        } else return ''
-      },
-      set(hr) {
-        this.$store.commit('layers/setTime', hr.toString().padStart(2, '0'))
-        this.$store.dispatch('map/setRedrawTrue')
-        // this.chkBtns()
-      },
-    },
-
-    selectedDate: {
-      get() {
-        if (this.$store.state.layers.interDate !== null)
-          return this.modelDate2datepickerDate(
-            this.$store.state.layers.interDate
-          )
-        else return ''
-      },
-      set(value) {
-        this.$store.commit(
-          'layers/setDate',
-          this.datepickerDate2modelDate(value)
-        )
-        this.$store.dispatch('map/setRedrawTrue')
-        // this.chkBtns()
-      },
-    },
-
-    availDepths() {
-      return this.selected.depthProperties.depthValues
-    },
-
-    iDepth: {
-      get() {
-        return this.selected.depthProperties.iDepth
-      },
-      set(value) {
-        const cloneSelected = JSON.parse(JSON.stringify(this.selected))
-        cloneSelected.depthProperties.iDepth = value
-        this.$store.commit('layers/updateSelected',cloneSelected)
-        this.$store.dispatch('map/setRedrawTrue')
-      },
-    },
+    // iLevel: {
+    //   get() {
+    //     return this.selected.regions[this.iRegion].levels.iLevel
+    //   },
+    //   set(value) {
+    //     this.selected.regions[this.iRegion].levels.iLevel = value
+    //     this.$store.commit('map/setRedrawTrue')
+    //   },
+    // },
 
     formattedSelectedDate() {
       return moment(
-        this.sliderDateTimes[this.selectedDateTimeSlider].date
-      ).format('MMM DD')
+        this.sliderDateTimes[this.iDateTimeSlider].date
+      ).format('MMM Do')
       // return moment().utc(this.selectedDate).format('MMM DD')
     },
 
@@ -338,11 +315,57 @@ export default {
     },
   },
 
+  // ###############################################################
+  // ######################## --- WATCH --- ########################
+  watch: {
+    selected: {
+      handler() {
+        if (this.$store.state.layers.interDateTime !== null) {
+          const dateTime = this.$store.state.layers.interDateTime
+          const indx = this.sliderDateTimes
+            // .map((dt) => `${dt.date}_${dt.time}`)
+            // .indexOf(`${date}_${time}`)
+            .indexOf(dateTime)
+          if (indx >= 0) this.iDateTimeSlider = indx
+          else this.iDateTimeSlider = 0
+
+          // this.$store.commit('layers/setDate', this.sliderDateTimes[0].date)
+          // this.$store.commit('layers/setTime', this.sliderDateTimes[0].time)
+          // this.$store.commit('map/setRedrawTrue')
+          // this.$store.commit('map/setMapIdle', false)
+
+          this.updateDateTime()
+        }
+        if (this.selected.hasLevels)
+          this.iLevel = this.selected.region.levels.iLevel
+      },
+      deep: true,
+    },
+  },
+
   // #################################################################
   // ######################## --- MOUNTED --- ########################
 
   mounted() {
-    this.$store.commit('layers/setDate', this.now.format('YYYYMMDD'))
+    // this.$store.commit('layers/setDate', this.now.format('YYYYMMDD'))
+    // this.$store.commit('layers/setTime', this.now.format('HH'))
+    if (this.selected.hasLevels)
+      this.iLevel = this.selected.region.levels.iLevel
+
+    // const date = this.$store.state.layers.interDate
+    // const time = this.$store.state.layers.interTime
+    const dateTime = this.$store.state.layers.interDateTime
+    const indx = this.sliderDateTimes
+      // .map((dt) => `${dt.date}_${dt.time}`)
+      // .indexOf(`${date}_${time}`)
+      .indexOf(dateTime)
+    if (indx >= 0) {
+      this.iDateTimeSlider = indx
+    } else {
+      this.iDateTimeSlider = 0
+    }
+
+
 
     //  window.addEventListener('keyup',(e)=>{
     //    if(e.key==='ArrowRight') this.next()
@@ -358,6 +381,35 @@ export default {
       return this.availDates.includes(date)
     },
 
+    updateDateTime() {
+      this.$store.commit(
+        'layers/setInterDateTime',
+        this.sliderDateTimes[this.iDateTimeSlider]
+      )
+      // this.$store.commit(
+      //   'layers/setTime',
+      //   this.sliderDateTimes[this.iDateTimeSlider].time
+      // )
+      this.$store.commit('map/setRedrawTrue')
+      this.$store.commit('map/setMapIdle', false)
+    },
+
+    updateLevel() {
+      this.selected.region.levels.iLevel = this.iLevel
+      this.$store.commit('map/setRedrawTrue')
+
+      // this.$store.commit(
+      //   'layers/setDate',
+      //   this.sliderDateTimes[this.iDateTimeSlider].date
+      // )
+      // this.$store.commit(
+      //   'layers/setTime',
+      //   this.sliderDateTimes[this.iDateTimeSlider].time
+      // )
+      // this.$store.commit('map/setRedrawTrue')
+      // this.$store.commit('map/setMapIdle', false)
+    },
+
     modelDate2datepickerDate(d) {
       return `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6)}`
     },
@@ -371,24 +423,28 @@ export default {
     },
 
     next() {
-      if (this.selectedDateTimeSlider < this.sliderDateTimes.length - 1)
-        this.selectedDateTimeSlider += 1
+      if (this.iDateTimeSlider < this.sliderDateTimes.length - 1) {
+        this.iDateTimeSlider += 1
+        this.updateDateTime()
+      }
     },
 
     previous() {
-      if (this.selectedDateTimeSlider > 0) this.selectedDateTimeSlider -= 1
+      if (this.iDateTimeSlider > 0) {
+        this.iDateTimeSlider -= 1
+        this.updateDateTime()
+      }
     },
 
-    toggleDepthSlider() {
-      this.showDepthSlider = !this.showDepthSlider
+    toggleLevelSlider() {
+      this.showLevelSlider = !this.showLevelSlider
     },
 
-    getDepth(){
-      const depth= this.availDepths[this.iDepth]
-      if(depth===0)
-      return 'Surface'
-      else return `${depth} hPa`
-    }
+    getLevel() {
+      const level = this.availLevels[this.iLevel]
+      if (typeof level === 'number') return `${level} m`
+      else return level
+    },
 
     // nextDay() {
     //   const currentDate = this.modelDate2datepickerDate(
@@ -472,7 +528,7 @@ export default {
 }
 
 .v-btn {
-    text-transform: unset !important;
+  text-transform: unset !important;
 }
 </style>
 

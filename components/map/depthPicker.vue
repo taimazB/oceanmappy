@@ -2,14 +2,14 @@
   <v-row
     align="center"
     justify="center"
-    class="depthSlider"
+    class="levelSlider"
     data-app
     style="width:100%"
   >
     <v-select
-      v-model="selectedDepth"
-      label="Depth"
-      :items="depthLabels"
+      v-model="selectedLevel"
+      label="Level"
+      :items="levelLabels"
       menu-props="auto"
       hide-details
       single-line
@@ -24,28 +24,28 @@ export default {
   // ######################## --- DATA --- ########################
   data() {
     return {
-      noOfDepthLayers: 0
+      noOfLevels: 0
     }
   },
 
   // ##################################################################
   // ######################## --- COMPUTED --- ########################
   computed: {
-    selectedDepth: {
+    selectedLevel: {
       get() {
-        return this.depthLabels[
-          this.$store.state.layers.selected.depthProperties.iDepth
+        return this.levelLabels[
+          this.$store.state.layers.selected.levels.iLevel
         ]
       },
-      set(depthLabel) {
-        this.$store.commit('layers/setDepth', this.depthLabels.indexOf(depthLabel))
-        this.$store.dispatch('map/setRedrawTrue')
+      set(levelLabel) {
+        this.$store.commit('layers/setLevel', this.levelLabels.indexOf(levelLabel))
+        this.$store.commit('map/setRedrawTrue')
       }
     },
 
-    depthLabels() {
+    levelLabels() {
       // if (this.$store.state.layers.selected !== null) {
-      return this.$store.state.layers.selected.depthProperties.depthLabels
+      return this.$store.state.layers.selected.levels.values
       // } else {
       //   return ['0050']
       // }
@@ -59,9 +59,9 @@ export default {
   // #################################################################
   // ######################## --- MOUNTED --- ########################
   mounted() {
-    this.noOfDepthLayers =
-      this.$store.state.layers.selected.depthProperties.depthValues.length - 1
-    this.iDepth = this.noOfDepthLayers
+    this.noOfLevels =
+      this.$store.state.layers.selected.levels.values.length - 1
+    this.iLevel = this.noOfLevels
   }
 }
 </script>
@@ -70,28 +70,4 @@ export default {
 .v-input {
   font-size: xx-small;
 }
-
-/* @import 'assets/css/map.css'; */
-
-/* .depthSlider {
-  align-content: center;
-}
-
-.depthSlider .v-slider--vertical .v-slider__ticks-container {
-  left: 20%;
-}
-
-.depthSlider .v-slider__tick-label,
-.depthSlider .v-slider__tick,
-.depthSlider .v-slider__ticks-container {
-  width: 100% !important;
-}
-
-.depthSlider .v-slider__tick-label {
-  text-align: right;
-}
-
-.depthSlider .v-slider__tick {
-  background: none;
-} */
 </style>

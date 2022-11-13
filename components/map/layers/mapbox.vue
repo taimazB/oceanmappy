@@ -8,6 +8,20 @@
       position: 'absolute',
     }"
   >
+    <!-- 2D/3D SWITCH -->
+    <v-icon
+      large
+      color="white"
+      @click="switchMapProjection"
+      style="
+        position: absolute;
+        z-index: 2;
+        background: #333;
+        border-bottom-right-radius: 15px;
+      "
+      >mdi-video-{{ mapProjection === '3d' ? '2d' : '3d' }}</v-icon
+    >
+
     <!-- ##  CONFIRM DELETE -->
     <v-dialog v-model="showConfirmDelete" width="200px" persistent>
       <v-card>
@@ -33,22 +47,65 @@ import moment from 'moment'
 
 // import get from 'is-sea'
 import tilebelt from '@mapbox/tilebelt'
-import _ from 'lodash'
 
 import { updateProfile } from '../profile/profile'
 import { updateDistance } from '../profile/distance'
+import {
+  initOPASSmarkers,
+  addOPASSmarkers,
+  removeOPASSmarkers,
+  removeOPASS,
+  // updateOPASSlonLat,
+  // updateOPASSwpt,
+  updateOPASSsurfacings,
+} from '../OPASS/opass.js'
+
+// PATH PLANNING
+import {
+  // initPPmarkers,
+  // addPPmarkers,
+  // removePPmarkers,
+  PPupdateProjection,
+  PPshowHideProjection,
+  // updatePPmap,
+  removePPmap,
+  // boldPPpath,
+  addPath,
+  addWPs,
+  // addProjection,
+  // addConfidence
+} from '../PP/pathPlanning'
+
+import {
+  initMissionPlots,
+  endMissionPlots,
+  updateMissionPlotsSelectedPoints,
+  addSlocumProfilePointsMap,
+  getMissionVariables,
+} from '../missions/missionPlots'
+
+// MISSIONS
+import {
+  updateMissions,
+  addPropertyTextLayer,
+  generateVelocityLayerGJ,
+  addPropertyVelocityLayer,
+  updatePropertyVelocityLayer,
+  removePropertyLayer,
+} from '../missions/missions'
 
 // CURRENTS
 import {
-  loadImageCurrents,
-  loadImageWind,
-  onAllLoadedCurrents,
-  removeCurrents,
+  // loadImageCurrents,
+  // onAllLoadedCurrents,
+  loadUV,
+  removeUV,
 } from './currents/currents'
 import {
-  staticPrepare,
-  generateGJ,
-  updateStaticCurrentsLayer,
+  // staticPrepare,
+  // generateGJ,
+  updateStaticUV,
+  updateStaticUVmaxSpeed,
 } from './currents/currentsStatic'
 import {
   createAnimCanvas,
@@ -72,13 +129,27 @@ import {
   removeBathymetryBoundaries,
   addBathymetryNOAAregions,
   removeBathymetryNOAAregions,
+  // addBathymetryContourLabels,
+  // modifyBathymetryContourLabels,
+  // boldBathymetryContourLines,
+  // removeBathymetryContourLabels
+  // removeBathymetryContours
 } from './bathymetry'
 import { addTopography, removeTopography } from './topography'
 // import { addIceberg, removeIceberg } from './iceberg'
 import { decodeColor, decodeColorCurrent } from './decodeColor'
 import mouseInfo from './mouseInfo.vue'
+// import {
+//   startLine,
+//   mapClick,
+//   // linesMarkerDrag,
+//   removeLines,
+//   updateLines,
+//   updateXYplot
+// } from './drawLine.js'
 import { addPulsingDot, updatePulsingDot, removePulsingDot } from './pulsingDot'
-import { toggleAltimetry, updateAltimetry } from './altimetry/altimetry'
+import { updateAltimetry, updateAltimetryColormap } from './altimetry/altimetry'
+
 import { updateAIS } from './AIS/AIS'
 
 import {
@@ -88,9 +159,16 @@ import {
   updateArgoProfilePoint,
 } from './argo/argo'
 
+import {
+  updateSentinelBoxes,
+  updateSentinelImage,
+  removeSentinel,
+} from './sentinel/sentinel'
+
 // const isSea = require('is-sea')
 
 // import { useWindowSize } from 'vue-window-size';
+// let cancelTokenSource = axios.CancelToken.source()
 
 export default {
   components: { mouseInfo },
@@ -100,10 +178,15 @@ export default {
   data() {
     return {
       map: null,
+      mapProjection: '2d',
       draw: null,
       accessToken:
+        // 'pk.eyJ1IjoidGFpbWF6IiwiYSI6ImNrNTlzd2h2dTA3NXgza3J6aHh2cHJlbDkifQ.iY8Kc535hXfTZ4VksOUBWg',
         'pk.eyJ1Ijoib2NlYW5nbnMiLCJhIjoiY2tteXgyYjczMDRjcDJudnZwZWNramJpOSJ9.WMXJlyVCZ3Ay1tMzHVRODA',
       mapStyle: 'mapbox://styles/oceangns/ckoaj8miq072p17p97l9x6fvj?fresh=true',
+      // mapStyle:
+      //   'mapbox://styles/oceangns/ckoaj8miq072p17p97l9x6fvj/draft?fresh=true',
+      // center: [-52.71, 47.56],
       center: [20, 0],
       zoom: 2,
       minZoom: 2,
@@ -113,6 +196,7 @@ export default {
         [179.99, 85],
       ],
       imgFilledGlobal: { img: null, width: 0, height: 0 },
+      // cnvFilledContour: null,
       imgCurrentsGlobal: { img: null, width: 0, height: 0 },
       cnvCurrents: null,
       ctxCurrents: null,
@@ -121,18 +205,28 @@ export default {
       WindGL: null,
       reqAnimID: null,
       bathymetryLevel: null,
+      // PPmarkers: [],
       drawLine: false,
       lineOperations: [],
       lines: { markers: [] },
       clientWidth: 0,
       clientHeight: 0,
 
+      // urlLayer: '', // --- stores the url of the last active layer tile loaded for reading values
       lastTile: '', // --- stores the url of the last active layer tile loaded for reading values
+      // ctxTmpLayer: null,
       imgLayerData: null,
+      // imgLoaded: false,
+      PPmarkerStart: null,
+      PPmarkerEnd: null,
+      // profileTime_tileX: null, // --- Variables to keep X/Y index of tile for time profile data read
+      // profileTime_tileY: null,
       layersOrder: [
         'bathymetryFilled',
-        'filled_ocn',
-        'Currents',
+        'filled_ocean',
+        'current',
+        'seaiceVelocity',
+
         'bathymetryContourLines',
         'bathymetryContourLabels',
         'altimetry',
@@ -140,23 +234,47 @@ export default {
         'bathymetryBoundaries',
         'lines.line',
         'lines.text',
+        'mission', // --- This covers all mission related layers
         'pulsingDot',
+        // 'PP_Confidence_fill',
+        // 'PP_Projection_circles',
+        // 'PP_Projection_text',
+        // 'PP_path_line',
+        // 'PP_path_circles',
+        // 'PP_path_text',
+        // 'PP_WPs_circles',
+        // 'PP_WPs_text',
+        'PP',
+        'OPASS_surfacings',
         'gl-draw',
+        'slocumProfilePoints',
+        'missionPlotsSelectedPoints',
         'distance',
         'argo',
-        // --- LAND
-        'country-boundaries',
-        // --- ATMOSPHERE
-        'filled_atm',
+        // --- BASE MAP
+        'land',
+
+        // SATELLITE IMAGES
+        'sentinel',
+
+        // ATMOSPHERE
+        'filled_atmosphere',
         'wind',
-        // --- MAP STUFF
+
+        // MAP STUFF
         'tunnel',
         'road',
         'bridge',
         'country-label',
         'state-label',
         'settlement',
+
+        'landMargin',
       ], // --- Last on top
+
+      OPASSmarkers: [],
+      OPASSmarkerStart: null,
+      OPASSmarkerWPT: null,
       showConfirmDelete: false,
       deletedDrawFeatures: [],
     }
@@ -166,33 +284,62 @@ export default {
   // ######################## --- COMPUTED --- ########################
 
   computed: {
+    username() {
+      if (this.$store.state.profile && this.$store.state.profile.user) {
+        return this.$store.state.profile.user.username
+      } else return ''
+    },
+
     selected() {
       return this.$store.state.layers.selected
     },
 
-    selectedField() {
-      return this.$store.state.layers.categories
-        .filter((c) => c.name === this.selected.category)[0]
-        .fields.filter((f) => f.name === this.selected.field)[0]
-    },
+    // selectedField() {
+    //   if (this.selected) {
+    //     const fields = []
+    //     this.$store.state.layers.fields.forEach((f) => {
+    //       if (f.subFields) f.subFields.forEach((sf) => fields.push(sf))
+    //       else fields.push(f)
+    //     })
+    //     return fields.filter((f) => f.name === this.selected.fieldName)[0]
+    //   } else return null
 
-    fieldAndModel() {
-      if (this.$store.state.layers.selected !== null)
-        return (
-          this.$store.state.layers.selected.field +
-          this.$store.state.layers.selected.modelDir
-        )
-      else return null
-    },
+    //   // return this.$store.state.layers.fields
+    //   //   .filter((f) => c.name === this.selected.category)[0]
+    //   //   .fields.filter((f) => f.name === this.selected.field)[0]
+    // },
 
-    colormap() {
-      if (this.selected) return this.selectedField.colorbar.colormap
-      else return this.$store.state.layers.bathymetries.colorbar.colormap
-    },
+    // selectedModel() {
+    //   if (this.selected) {
+    //     const model = this.$store.state.layers.models.filter(
+    //       (m) => m.name === this.selected.modelName
+    //     )[0]
+    //     model.iRegion = this.selected.iRegion
+    //     return model
+    //   } else return null
+    // },
+
+    // fieldAndModel() {
+    //   if (this.selected)
+    //     return `${this.selectedField.name}${this.selectedModel.name}${this.selectedModel.iRegion}`
+    //   else return null
+    // },
+
+    // colormap() {
+    //   if (this.selected) return this.selectedField.colorbar.colormap
+    //   else return this.$store.state.layers.bathymetries.colorbar.colormap
+    // },
 
     redraw() {
       return this.$store.state.map.redraw
     },
+
+    // PPfromCoordinate() {
+    //   return this.$store.state.map.PP.fromCoordinate
+    // },
+    // PPtoCoordinate() {
+    //   return this.$store.state.map.PP.toCoordinate
+    // },
 
     mapOpacity() {
       return { opacity: this.$store.state.map.mapOpacity }
@@ -201,6 +348,24 @@ export default {
     imgBnds() {
       if (this.$store.state.layers.selected === null) return null
       else return this.$store.state.layers.selected.imgBnds
+    },
+
+    // PPresults() {
+    //   return this.$store.state.PP.PPs.map(PP=>PP.results)
+    // },
+
+    // PPiBold() {
+    //   return this.$store.state.map.PP.iBold
+    // },
+
+    PPs() {
+      return this.$store.state.PP.PPs
+    },
+    PPid2update() {
+      return this.$store.state.PP.PPid2update
+    },
+    PPmarkers() {
+      return this.$store.state.PP.PPmarkers
     },
 
     selectedBathymetry() {
@@ -233,11 +398,28 @@ export default {
       return this.$store.state.map.distanceOn
     },
 
+    // profileXYon() {
+    //   return this.$store.state.map.profileXYon
+    // },
+
     width() {
       return window.innerWidth
     },
     height() {
       return window.innerHeight
+    },
+
+    // missions() {
+    //   return this.$store.state.missions.missions
+    // },
+    // missionZoomIndex() {
+    //   return this.$store.state.missions.missionZoomIndex
+    // },
+    /**
+     * {id, gj, show, displayProperties}
+     */
+    missionsData() {
+      return this.$store.state.missions.missionsData
     },
 
     flyToCoord() {
@@ -248,11 +430,31 @@ export default {
       return this.$store.state.map.fitBoundsCoords
     },
 
+    //     missionsCenterCoord(){
+    // const lonAvg = this.missions.map(m=>m.lastCoord[0]).reduce((a,b)=>a+b,0) / this.missions.length || 0
+    // const latAvg = this.missions.map(m=>m.lastCoord[1]).reduce((a,b)=>a+b,0) / this.missions.length || 0
+    // return [lonAvg,latAvg]
+    //     },
+
+    // missionsColor() {
+    //   return this.$store.state.missions.missionsColor
+    // },
+    // missionsPropertyLayer() {
+    //   return this.$store.state.missions.missionsPropertyLayer
+    // },
+
     pins() {
       return this.$store.state.map.pins
     },
     pinsNumber() {
       return this.$store.state.map.pins.length
+    },
+
+    missionWPpins() {
+      return this.$store.state.missions.missionWPpins
+    },
+    noMissionWPpins() {
+      return this.$store.state.missions.missionWPpins.length
     },
 
     currentsMin() {
@@ -263,8 +465,20 @@ export default {
       return this.$store.state.map.currentsMax
     },
 
-    selectedBathymetryContourLevels() {
-      return this.$store.state.map.selectedBathymetryContourLevels
+    selectedBathymetryContours() {
+      return this.$store.state.map.selectedBathymetryContours
+    },
+
+    OPASSon() {
+      return this.$store.state.map.OPASS.on
+    },
+    OPASSsurfacings() {
+      return this.$store.state.map.OPASS.surfacingsGJ
+    },
+
+    leftBarContent() {
+      // if (this.map) this.map.resize()
+      return this.$store.state.map.leftBarContent
     },
 
     rightBarContent() {
@@ -277,6 +491,9 @@ export default {
     noWPpins() {
       return this.WPpins.length
     },
+    seagliderEscapePin() {
+      return this.$store.state.WPgen.seagliderEscapePin
+    },
 
     currentsDirectionOn() {
       return this.$store.state.map.currentsDirectionOn
@@ -284,10 +501,6 @@ export default {
 
     activeLayerOpacity() {
       return this.$store.state.map.activeLayerOpacity
-    },
-
-    maxWindSpeed(){
-return this.$store.state.map.maxWindSpeed
     },
 
     showLayers() {
@@ -307,21 +520,40 @@ return this.$store.state.map.maxWindSpeed
       },
     },
 
+    missionPlotsShow() {
+      return this.$store.state.missions.missionPlots.show
+    },
+    missionPlotsUpdate() {
+      return this.$store.state.missions.missionPlots.update
+    },
+
     activeLayerValueAtMouseStatus() {
       return this.$store.state.map.activeLayerValueAtMouseStatus
     },
 
-    selectedAltimetrySatellites() {
-      return this.$store.state.layers.selectedAltimetrySatellites
+    // Draw: {
+    //   get() {
+    //     return this.$store.state.map.Draw
+    //   },
+    //   set(value) {
+    //     this.$store.commit('map/setDraw', value)
+    //   }
+    // }
+
+    selectedAltimetryPackage() {
+      return this.$store.state.altimetry.selectedAltimetryPackage
     },
-    selectedAltimetryDates() {
-      return this.$store.state.layers.selectedAltimetryDates
-    },
-    selectedAltimetryVariable() {
-      return this.$store.state.layers.selectedAltimetryVariable
-    },
+    // selectedAltimetrySatellites() {
+    //   return this.$store.state.layers.selectedAltimetrySatellites
+    // },
+    // selectedAltimetryDates() {
+    //   return this.$store.state.layers.selectedAltimetryDates
+    // },
+    // selectedAltimetryVariable() {
+    //   return this.$store.state.layers.selectedAltimetryVariable
+    // },
     altimetryMapboxColormap() {
-      return this.$store.state.map.altimetryMapboxColormap
+      return this.$store.state.altimetry.altimetryMapboxColormap
     },
 
     AISselectedYear() {
@@ -340,6 +572,14 @@ return this.$store.state.map.maxWindSpeed
 
     colors() {
       return this.$store.state.map.colors
+    },
+
+    // logSelectedMission() {
+    //   return this.$store.state.missions.logSelectedMission
+    // },
+
+    selectedMissionNoteID() {
+      return this.$store.state.missions.selectedMissionNoteID
     },
 
     currentsLocked() {
@@ -371,13 +611,27 @@ return this.$store.state.map.maxWindSpeed
       return this.$store.state.argo.plotData
     },
 
-    currentsAnimationOn: {
-      get() {
-        return this.$store.state.map.currentsAnimationOn
-      },
-      set(status) {
-        this.$store.commit('map/setCurrentsAnimationOn', status)
-      },
+    // --- SENTINEL
+    sentinelGJ() {
+      return this.$store.state.sentinel.filteredGJ
+    },
+
+    sentinelSelected() {
+      return this.$store.state.sentinel.selected
+    },
+
+    isRemoveSentinel() {
+      return this.$store.state.map.isRemoveSentinel
+    },
+
+    vectorStatic() {
+      return this.$store.state.map.vectorStatic
+    },
+
+    maxSpeed() {
+      if (this.selected && this.selected.field.name === 'current')
+        return this.$store.state.map.maxSpeedCurrent
+      else return this.$store.state.map.maxSpeedWind
     },
   },
 
@@ -386,66 +640,102 @@ return this.$store.state.map.maxWindSpeed
 
   watch: {
     // --- Change of model -> Initiate availDateTimes and the rest
-    fieldAndModel(newVal, oldVal) {
-      this.removeAllLayers()
-      if (this.selected === null) {
-        this.addBathymetry()
-        return null
-      }
+    selected: {
+      handler(newVal, oldVal) {
+        this.removeAllLayers()
+        if (this.selected === null) {
+          this.addBathymetry()
+          return null
+        }
 
-      if (
-        this.selected.field === 'Currents' ||
-        this.selected.field === 'wind'
-      ) {
-        // this.addBathymetry()
-        this.$store.commit(
-          'layers/setDate',
-          this.$store.state.map.now.format('YYYYMMDD')
-        )
-        this.$store.commit(
-          'layers/setTime',
-          this.$store.state.map.now.format('HH')
-        )
-        // if (this.selected.depthProperties.hasDepth)
+        // if (
+        //   this.selected.field === 'current' ||
+        //   this.selected.field === 'wind' ||
+        //   this.selected.field === 'seaiceVelocity'
+        // ) {
+        //   // this.addBathymetry()
         //   this.$store.commit(
-        //     'layers/setDepth',
-        //     this.selected.depthProperties.depthValues.length - 1
+        //     'layers/setDate',
+        //     this.$store.state.map.now.format('YYYYMMDD')
         //   )
-        // else
-        this.$store.commit('layers/setDepth', 0)
-        this.$store.commit('map/setRedraw', true)
-        // } else if (this.selected.field === 'Iceberg') {
-        //   this.addIceberg()
-      } else {
-        // --- FILLED CONTOURS
-        this.removeBathymetryFilled()
-        this.$store.commit(
-          'layers/setDate',
-          this.$store.state.map.now.format('YYYYMMDD')
-        )
-        this.$store.commit(
-          'layers/setTime',
-          this.$store.state.map.now.format('HH')
-        )
-        this.$store.dispatch('map/setRedrawTrue')
-      }
+        //   this.$store.commit(
+        //     'layers/setTime',
+        //     this.$store.state.map.now.format('HH')
+        //   )
+        //   const iRegion = this.selected.iRegion
+        //   if (this.selected.regions[iRegion].levels.hasLevels)
+        //     this.$store.commit(
+        //       'layers/setLevel',
+        //       this.selected.regions[iRegion].levels.iLevel
+        //     )
+        //   // else this.$store.commit('layers/setLevel', 0)
+        //   this.$store.commit('map/setRedrawTrue')
+        //   // } else if (this.selected.field === 'Iceberg') {
+        //   //   this.addIceberg()
+        // } else {
+        //   // --- FILLED CONTOURS
+        //   this.removeBathymetryFilled()
+        //   this.$store.commit(
+        //     'layers/setDate',
+        //     this.$store.state.map.now.format('YYYYMMDD')
+        //   )
+        //   this.$store.commit(
+        //     'layers/setTime',
+        //     this.$store.state.map.now.format('HH')
+        //   )
+        //   this.$store.commit('map/setRedrawTrue')
+        // }
 
-      if (newVal === null || oldVal === null) this.map.resize()
+        if (this.selected.field.type === 'vector') this.addBathymetry()
+        else this.removeBathymetryFilled()
+
+        // this.$store.commit(
+        //   'layers/setDate',
+        //   this.$store.state.map.now.format('YYYYMMDD')
+        // )
+        // this.$store.commit(
+        //   'layers/setTime',
+        //   this.$store.state.map.now.format('HH')
+        // )
+
+        // this.$store.commit('layers/setDateTime', moment.utc())
+
+        // const iRegion = this.selectedModel.iRegion
+        if (this.selected.hasLevels)
+          this.$store.commit(
+            'layers/setLevel',
+            this.selected.region.levels.iLevel
+          )
+        this.$store.commit('map/setRedrawTrue')
+
+        if (this.selected.region.name !== 'global') {
+          const minLon = this.selected.region.bnds.minLon
+          const maxLon = this.selected.region.bnds.maxLon
+          const minLat = this.selected.region.bnds.minLat
+          const maxLat = this.selected.region.bnds.maxLat
+          this.$store.commit('map/setFitBoundsCoords', [
+            [minLon, minLat],
+            [maxLon, maxLat],
+          ])
+        }
+
+        if (newVal === null || oldVal === null) this.map.resize()
+      },
+      deep: true,
     },
 
     redraw(n, o) {
       if (this.redraw) {
-        if (this.selected !== null) {
-          if (
-            this.selected.field === 'Currents' ||
-            this.selected.field === 'wind'
-          ) {
-            // if (this.currentsDirectionOn)
-            this.loadImageCurrents()
-
-            if (this.selected.field === 'Currents') this.addFilledContour()
+        if (this.selected) {
+          if (this.selected.field.type === 'vector') {
+            // if (this.currentsDirectionOn) {
+            //   if (this.currentsAnimationOn) this.loadImageCurrents()
+            //   else this.staticPrepare()
+            // }
+            // this.addFilledContour()
             // } else if (this.selected.field === 'Iceberg') {
             //   return null
+            this.loadUV()
           } else {
             this.addFilledContour()
           }
@@ -457,12 +747,12 @@ return this.$store.state.map.maxWindSpeed
       }
     },
 
-    colormap: {
-      handler() {
-        this.$store.dispatch('map/setRedrawTrue')
-      },
-      deep: true,
-    },
+    // colormap: {
+    //   handler() {
+    //     this.$store.commit('map/setRedrawTrue')
+    //   },
+    //   deep: true,
+    // },
 
     selectedBathymetry() {
       this.removeAllLayers()
@@ -471,6 +761,11 @@ return this.$store.state.map.maxWindSpeed
     },
 
     bathymetryOpacity() {
+      // if (this.bathymetryOpacity === 0) {
+      //   this.removeBathymetryFilled()
+      // } else if (this.bathymetryOpacity === 1) {
+      //   this.addBathymetry()
+      // } else this.modifyBathymetryFilled()
       this.modifyBathymetryFilled()
     },
 
@@ -490,7 +785,7 @@ return this.$store.state.map.maxWindSpeed
       if (this.selected) {
         // if (
         //   this.selected.field === 'Currents' ||
-        //   this.selected.field === 'wind'
+        //   this.selected.field === 'Wind'
         // )
         //   if (this.currentsAnimationOn)
         //     this.map.setPaintProperty(
@@ -520,9 +815,127 @@ return this.$store.state.map.maxWindSpeed
       }
     },
 
-    maxWindSpeed(){
-      this.$store.dispatch('map/setRedrawTrue')
+    // #################
+    // --- Path Planning
+    PPmarkers() {
+      Object.keys(this.PPmarkers).forEach((marker) => {
+        this.PPmarkers[marker].addTo(this.map)
+      })
     },
+
+    // PPs: {
+    //   handler(newPPs,oldPPs) {
+    //     newPPs.forEach(PP => {
+    //       const id = PP.id
+
+    //       // --- Find PP in oldPPs
+    //       const oldI = oldPPs.map(PP=>PP.id).indexOf(id)
+
+    //       // --- If not found, add everything
+    //       if(oldP===-1){}
+    //       // --- If found, modify if needed
+    //       else{
+    //       const newWPs = PP.results.WPs
+    //       const oldWPs = oldPPs[oldI].results.WPs
+
+    //       const projection = PP.results.projection
+
+    //       if (projection && projection.gj) {
+    //         const gj = projection.gj
+    //         this.PPupdateProjection(id, gj)
+    //       }
+    //       }
+    //     })
+    //   },
+    //   deep: true
+    // },
+    PPid2update() {
+      // --- Don't do anything if PPid2update == null
+      if (this.PPid2update) {
+        const id = this.PPid2update.split('_')[0]
+        const action = this.PPid2update.split('_')[1]
+
+        // --- Find the path to modify
+        const PP = this.PPs.filter((PP) => PP.id === id)[0]
+        const gj = PP.results.projection.gj
+
+        if (action === 'add') {
+          // --- Add WPpins to the map
+          PP.results.WPs.forEach((WP) => WP.marker.addTo(this.map))
+
+          if (gj) {
+            // --- Add gj to map
+            if (action === 'add') this.PPupdateProjection(PP.id, gj)
+          }
+        }
+
+        if (action === 'showHide') {
+          // --- Show/Hide markers
+          PP.results.WPs.forEach((WP) => {
+            WP.marker._element.style.visibility = PP.show ? 'visible' : 'hidden'
+          })
+
+          if (gj) {
+            this.PPshowHideProjection(PP.id, PP.show)
+          }
+        }
+
+        if (action === 'color') {
+          PP.results.WPs.forEach((WP) =>
+            this.$store.dispatch('WPgen/changeColor', {
+              marker: WP.marker,
+              color: PP.color,
+            })
+          )
+
+          if (gj) {
+            gj.data.features.forEach((feature) => {
+              feature.properties.color = `#${PP.color}`
+            })
+            this.PPupdateProjection(PP.id, gj)
+          }
+        }
+
+        if (action === 'delete') {
+          PP.results.WPs.forEach((WP) => WP.marker.remove())
+
+          try {
+            this.map.removeLayer(`PP_${id}_projection_circles`)
+            this.map.removeLayer(`PP_${id}_projection_text`)
+            this.map.removeSource(`PP_${id}_projection`)
+          } catch (error) {}
+
+          const i = this.PPs.map((PP) => PP.id).indexOf(PP.id)
+          this.PPs.splice(i, 1)
+        }
+      }
+    },
+
+    // PPon() {
+    //   this.PPon ? this.addPPmarkers() : this.removePPmarkers()
+    // },
+
+    // PPresults() {
+    //   this.PPresults ? this.updatePPmap() : this.removePPmap()
+    // },
+
+    // #################
+    // --- OPASS
+    OPASSon() {
+      this.OPASSon ? this.addOPASSmarkers() : this.removeOPASSmarkers()
+    },
+    OPASSsurfacings: {
+      handler() {
+        if (this.OPASSsurfacings) this.updateOPASSsurfacings()
+      },
+      deep: true,
+    },
+
+    // #################
+    // --- Drawing Lines
+    // drawLine() {
+    //   this.drawLine ? this.startLine() : this.removeLines()
+    // },
 
     distanceOn() {
       if (this.distanceOn) {
@@ -541,9 +954,44 @@ return this.$store.state.map.maxWindSpeed
       }
     },
 
+    // missions: {
+    //   handler() {
+    //     this.updateMissions()
+    //   },
+    //   deep: true,
+    // },
+
+    // leftBarContent() {
+    //   if (this.map) {
+    //     this.map.resize()
+    //   }
+    //   if (this.leftBarContent === 'missions') this.updateMissions()
+    // },
+
+    // missionZoomIndex() {
+    //   if (this.missionZoomIndex.changed) {
+    //     const features = this.missions[this.missionZoomIndex.i].gj.features
+    //     const coords = features[features.length - 1].geometry.coordinates
+    //     const lastCoord = coords[coords.length - 1]
+
+    //     this.map.flyTo({ center: lastCoord, zoom: 8 })
+    //     this.$store.commit('missions/setMissionZoomIndex', {
+    //       i: this.missionZoomIndex,
+    //       changed: false
+    //     })
+    //   }
+    // },
+
+    missionsData: {
+      handler() {
+        this.updateMissions()
+      },
+      deep: true,
+    },
+
     flyToCoord: {
       handler() {
-        this.map.flyTo({ center: this.flyToCoord, zoom: 8 })
+        this.map.flyTo({ center: this.flyToCoord, zoom: 6 })
       },
       deep: true,
     },
@@ -555,63 +1003,73 @@ return this.$store.state.map.maxWindSpeed
       deep: true,
     },
 
-    currentsMin() {
-      // --- Only if changed by the settings dialog
-      // if (this.$store.state.map.showSettings) {
-      if (
-        this.selected &&
-        (this.selected.field === 'Currents' ||
-          this.selected.field === 'wind') &&
-        !this.currentsAnimationOn
-      ) {
-        const gj = this.generateGJ()
-        this.updateStaticCurrentsLayer(gj)
-      }
+    // currentsMin() {
+    //   // --- Only if changed by the settings dialog
+    //   // if (this.$store.state.map.showSettings) {
+    //   if (
+    //     this.selected &&
+    //     (this.selected.field === 'current' || this.selected.field === 'wind') &&
+    //     !this.currentsAnimationOn
+    //   ) {
+    //     const gj = this.generateGJ()
+    //     this.updateStaticCurrentsLayer(gj)
+    //   }
 
-      // --- Update missions velocity arrows if needed
-      this.missions.forEach((mission, i) => {
-        if (
-          mission.selectedProperty &&
-          mission.selectedProperty.includes('Velocity')
-        ) {
-          const gj = this.generateVelocityLayerGJ(mission.selectedProperty, i)
-          this.updatePropertyVelocityLayer(i, gj)
-        }
-      })
-      // }
-    },
-    currentsMax() {
-      // --- Only if changed by the settings dialog
-      // if (this.$store.state.map.showSettings) {
-      if (
-        this.selected &&
-        (this.selected.field === 'Currents' ||
-          this.selected.field === 'wind') &&
-        !this.currentsAnimationOn
-      ) {
-        const gj = this.generateGJ()
-        this.updateStaticCurrentsLayer(gj)
-      }
+    //   // --- Update missions velocity arrows if needed
+    //   this.missions.forEach((mission, i) => {
+    //     if (
+    //       mission.selectedProperty &&
+    //       mission.selectedProperty.includes('Velocity')
+    //     ) {
+    //       const gj = this.generateVelocityLayerGJ(mission.selectedProperty, i)
+    //       this.updatePropertyVelocityLayer(i, gj)
+    //     }
+    //   })
+    //   // }
+    // },
+    // currentsMax() {
+    //   // --- Only if changed by the settings dialog
+    //   // if (this.$store.state.map.showSettings) {
+    //   if (
+    //     this.selected &&
+    //     (this.selected.field === 'current' || this.selected.field === 'wind') &&
+    //     !this.currentsAnimationOn
+    //   ) {
+    //     const gj = this.generateGJ()
+    //     this.updateStaticCurrentsLayer(gj)
+    //   }
 
-      // --- Update missions velocity arrows if needed
-      this.missions.forEach((mission, i) => {
-        if (
-          mission.selectedProperty &&
-          mission.selectedProperty.includes('Velocity')
-        ) {
-          const gj = this.generateVelocityLayerGJ(mission.selectedProperty, i)
-          this.updatePropertyVelocityLayer(i, gj)
-        }
-      })
-      // }
-    },
+    //   // --- Update missions velocity arrows if needed
+    //   this.missions.forEach((mission, i) => {
+    //     if (
+    //       mission.selectedProperty &&
+    //       mission.selectedProperty.includes('Velocity')
+    //     ) {
+    //       const gj = this.generateVelocityLayerGJ(mission.selectedProperty, i)
+    //       this.updatePropertyVelocityLayer(i, gj)
+    //     }
+    //   })
+    //   // }
+    // },
 
-    selectedBathymetryContourLevels: {
+    selectedBathymetryContours: {
       handler() {
         this.modifyBathymetryContours()
       },
       deep: true,
     },
+
+    // profileXYon() {
+    //   if (this.profileXYon) {
+    //     this.lineOperations.push('profile')
+    //     this.drawLine = true
+    //   } else {
+    //     this.lineOperations = this.lineOperations.filter(
+    //       (lo) => lo !== 'profile'
+    //     )
+    //     if (this.lineOperations.length === 0) this.drawLine = false
+    //   }
+    // },
 
     pinsNumber() {
       this.pins.forEach((pin) => {
@@ -619,19 +1077,143 @@ return this.$store.state.map.maxWindSpeed
       })
     },
 
-    currentsDirectionOn() {
-      // if (this.currentsDirectionOn)
-      this.loadImageCurrents()
-      // else this.removeCurrents()
+    noMissionWPpins() {
+      this.missionWPpins.forEach((pin) => {
+        pin.marker.addTo(this.map)
+        // pin.marker.togglePopup()
+      })
     },
 
-    currentsAnimationOn() {
-      this.removeCurrents()
-      this.$store.dispatch('map/setRedrawTrue')
+    // --- When new WP pin is added
+    noWPpins() {
+      this.WPpins.forEach((pin, i) => {
+        let coord = pin.marker.getLngLat()
+        if (!coord) {
+          coord = this.map.getCenter()
+        }
+        this.WPpins[i].marker.setLngLat(coord).addTo(this.map).togglePopup()
+        // this.$store.commit('map/setWPpins', this.WPpins)
+      })
+    },
+    seagliderEscapePin() {
+      if (this.seagliderEscapePin) {
+        let coord = this.seagliderEscapePin.marker.getLngLat()
+        if (!coord) {
+          coord = this.map.getCenter()
+        }
+        this.seagliderEscapePin.marker.setLngLat(coord).addTo(this.map)
+      }
     },
 
     showLayers() {
       this.map.resize()
+    },
+
+    // --- MISSION NOTE
+    selectedMissionNoteID() {
+      // --- REMOVE DRAW IF ALREADY THERE
+      // if (this.draw) {
+      //   this.map.removeControl(this.draw)
+      //   this.draw = null
+      // }
+
+      console.log(this.selectedMissionNoteID);
+      if (this.selectedMissionNoteID) {
+        const missions = this.$store.state.missions.missions
+        const i = missions.map((m) => m._id).indexOf(this.selectedMissionNoteID)
+        const mission = missions[i]
+        let features = mission.notes.map((n) => n.features).filter((x) => x)
+        features = [].concat.apply([], features)
+
+        const pointFeatures = features.filter(
+          (f) => f.geometry.type === 'Point'
+        )
+        const lineFeatures = features.filter(
+          (f) => f.geometry.type === 'LineString'
+        )
+        const polygonFeatures = features.filter(
+          (f) => f.geometry.type === 'Polygon'
+        )
+
+        // POINTS
+        if (pointFeatures.length > 0) {
+          const ID = `missionNotes_point_${this.selectedMissionNoteID}`
+          this.map.addSource(ID, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: pointFeatures,
+            },
+          })
+
+          this.map.addLayer({
+            id: ID,
+            type: 'circle',
+            source: ID,
+            paint: {
+              // 'circle-color': ['get', 'color'],
+              'circle-color': 'red',
+            },
+          })
+        }
+
+        // LINES
+        if (lineFeatures.length > 0) {
+          const ID = `missionNotes_line_${this.selectedMissionNoteID}`
+          this.map.addSource(ID, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: lineFeatures,
+            },
+          })
+
+          this.map.addLayer({
+            id: ID,
+            type: 'line',
+            source: ID,
+            paint: {
+              // 'line-color': ['get', 'color'],
+              // 'line-width': ['get', 'thickness'],
+              'line-color': 'red',
+            },
+          })
+        }
+
+        // POLYGONS
+        if (polygonFeatures.length > 0) {
+          const ID = `missionNotes_polygon_${this.selectedMissionNoteID}`
+          this.map.addSource(ID, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: polygonFeatures,
+            },
+          })
+
+          this.map.addLayer({
+            id: ID,
+            type: 'fill',
+            source: ID,
+            paint: {
+              'fill-opacity': 0.5,
+              // 'fill-outline-color': ['get', 'color'],
+              'fill-outline-color': 'red',
+            },
+          })
+        }
+      } else {
+        const sources = Object.keys(this.map.getStyle().sources).filter((s) =>
+          s.includes('missionNotes')
+        )
+        console.log(sources);
+        sources.forEach((ID) => {
+          try {
+            this.map.removeLayer(ID)
+            this.map.removeSource(ID)
+          } catch (error) {}
+        })
+      }
     },
 
     drawMode() {
@@ -647,7 +1229,7 @@ return this.$store.state.map.maxWindSpeed
       }
 
       if (this.drawMode) {
-        if (this.drawMode === 'log') {
+        if (this.drawMode === 'missionNote') {
           this.draw = new MapboxDraw({
             displayControlsDefault: false,
             controls: {
@@ -656,48 +1238,38 @@ return this.$store.state.map.maxWindSpeed
               polygon: true,
               trash: true,
             },
-            userProperties: true,
-            styles: this.$store.state.map.MBdefaultDrawStyles.concat([
-              {
-                id: 'gl-draw-line-user',
-                type: 'line',
-                filter: [
-                  'all',
-                  ['==', '$type', 'LineString'],
-                  ['has', 'user_color'],
-                ],
-                paint: {
-                  'line-color': ['get', 'user_color'],
-                  'line-width': ['get', 'user_thickness'],
-                },
-              },
-              {
-                id: 'gl-draw-polygon-user',
-                type: 'line',
-                filter: [
-                  'all',
-                  ['==', 'active', 'false'],
-                  ['==', '$type', 'Polygon'],
-                  ['!=', 'mode', 'static'],
-                ],
-                paint: {
-                  'line-color': ['get', 'user_color'],
-                  'line-width': ['get', 'user_thickness'],
-                },
-              },
-            ]),
+            // userProperties: true,
+            // styles: this.$store.state.map.MBdefaultDrawStyles.concat([
+            //   {
+            //     id: 'gl-draw-line-user',
+            //     type: 'line',
+            //     filter: [
+            //       'all',
+            //       ['==', '$type', 'LineString'],
+            //       ['has', 'user_color'],
+            //     ],
+            //     paint: {
+            //       'line-color': ['get', 'user_color'],
+            //       'line-width': ['get', 'user_thickness'],
+            //     },
+            //   },
+            //   {
+            //     id: 'gl-draw-polygon-user',
+            //     type: 'line',
+            //     filter: [
+            //       'all',
+            //       ['==', 'active', 'false'],
+            //       ['==', '$type', 'Polygon'],
+            //       ['!=', 'mode', 'static'],
+            //     ],
+            //     paint: {
+            //       'line-color': ['get', 'user_color'],
+            //       'line-width': ['get', 'user_thickness'],
+            //     },
+            //   },
+            // ]),
           })
           this.map.addControl(this.draw, 'top-right')
-
-          // --- Initial addition of loaded features if not added once before
-          // let features = this.$store.state.map.drawGJ.features
-          // if (features.length === 0)
-
-          // const features = this.logSelectedMission.logs.features
-          // const gj = { type: 'FeatureCollection', features }
-
-          if (this.logSelectedMission)
-            this.draw.set(this.logSelectedMission.logs)
         } else if (
           this.drawMode === 'profile' ||
           this.drawMode === 'distance'
@@ -742,27 +1314,58 @@ return this.$store.state.map.maxWindSpeed
       deep: true,
     },
 
-    selectedAltimetrySatellites: {
+    missionPlotsShow() {
+      this.map.resize()
+      if (this.missionPlotsShow) {
+        this.$store.commit(
+          'map/setFlyToCoord',
+          this.$store.state.missions.missionPlots.mission.lastCoord
+        )
+        this.initMissionPlots()
+      } else this.endMissionPlots()
+    },
+
+    missionPlotsUpdate() {
+      this.updateMissionPlotsSelectedPoints()
+    },
+
+    selectedAltimetryPackage: {
       handler() {
-        this.toggleAltimetry()
+        this.updateAltimetry()
       },
       deep: true,
     },
 
-    selectedAltimetryDates: {
-      handler() {
-        this.toggleAltimetry()
-      },
-      deep: true,
-    },
+    // selectedAltimetrySatellites: {
+    //   handler() {
+    //     this.toggleAltimetry()
+    //   },
+    //   deep: true,
+    // },
 
-    selectedAltimetryVariable() {
-      this.toggleAltimetry()
-    },
+    // selectedAltimetryDates: {
+    //   handler() {
+    //     this.toggleAltimetry()
+    //   },
+    //   deep: true,
+    // },
+
+    // selectedAltimetryVariable() {
+    //   this.toggleAltimetry()
+    // },
 
     altimetryMapboxColormap() {
-      if (this.selectedAltimetryVariable) this.toggleAltimetry()
+      // if (this.selectedAltimetryVariable) this.updateAltimetry()
+      this.updateAltimetryColormap()
     },
+
+    // drawSelectedFeatures: {
+    //   handler() {
+    //     const ids = this.drawSelectedFeatures.map(f => f.id)
+    //     this.draw.changeMode('simple_select', { featureIds: ids })
+    //   },
+    //   deep: true
+    // }
 
     AISselectedYear() {
       this.updateAIS()
@@ -820,6 +1423,40 @@ return this.$store.state.map.maxWindSpeed
     'argoPlotData.index'() {
       this.updateArgoProfilePoint()
     },
+
+    // --------------------------------------------------
+    // --- SENTINEL
+    sentinelGJ: {
+      handler() {
+        this.updateSentinelBoxes()
+      },
+      deep: true,
+    },
+
+    sentinelSelected: {
+      handler() {
+        this.updateSentinelImage()
+      },
+      deep: true,
+    },
+
+    isRemoveSentinel() {
+      if (this.isRemoveSentinel) {
+        this.removeSentinel()
+      }
+    },
+
+    // --------------------------------------------------
+    // --- Vector Static Change
+    vectorStatic() {
+      this.removeUV()
+      this.$store.commit('map/setRedrawTrue')
+    },
+
+    maxSpeed() {
+      if (this.vectorStatic) this.updateStaticUVmaxSpeed()
+      else this.$store.commit('map/setRedrawTrue')
+    },
   },
 
   // #################################################################
@@ -841,6 +1478,7 @@ return this.$store.state.map.maxWindSpeed
       // maxBounds: this.maxBounds,
       preserveDrawingBuffer: true,
     })
+
     console.log(this.map)
 
     // ################################
@@ -852,14 +1490,26 @@ return this.$store.state.map.maxWindSpeed
       this.drawSelectedFeatures = e.features
     })
 
+    this.map.addControl(
+      new mapboxgl.NavigationControl({
+        showCompass: false,
+      }),
+      'bottom-right'
+    )
+    // this.map.dragRotate.disable()
+    // this.map.touchZoomRotate.disableRotation()
+    // this.map.scrollZoom.setWheelZoomRate(1) TAIMAZ
     this.map.on('load', this.onMapLoad)
     this.map.on('idle', this.setMapIdle)
     this.map.on('move', this.onMapMove)
     this.map.on('moveend', this.onMapMoveEnd)
-    this.$store.commit('map/setMapZoom', this.zoom)
+    this.map.on('zoomend', this.onZoomEnd)
+    // this.map.on('zoomend', this.roundZoom) TAIMAZ
+    // this.$store.commit('map/setMapZoom', this.zoom)
 
     // --- Add arrow images for currents
     this.map.loadImage(
+      // 'https://api.oceangns.com/images/arrowBlack.png',
       'https://api.oceangns.com/images/arrowBlack.png',
       (err, img) => {
         if (err) {
@@ -869,16 +1519,16 @@ return this.$store.state.map.maxWindSpeed
         this.map.addImage('arrowBlack', img)
       }
     )
-    this.map.loadImage(
-      'https://api.oceangns.com/images/arrowRed.png',
-      (err, img) => {
-        if (err) {
-          console.log(err)
-        }
+    // this.map.loadImage(
+    //   'https://api.oceangns.com/images/arrowRed.png',
+    //   (err, img) => {
+    //     if (err) {
+    //       console.log(err)
+    //     }
 
-        this.map.addImage('arrowRed', img)
-      }
-    )
+    //     this.map.addImage('arrowRed', img)
+    //   }
+    // )
     this.map.loadImage(
       'https://api.oceangns.com/images/arrowBlue.png',
       (err, img) => {
@@ -930,15 +1580,16 @@ return this.$store.state.map.maxWindSpeed
 
   methods: {
     // --- CURRENTS
-    loadImageCurrents,
-    loadImageWind,
-    onAllLoadedCurrents,
-    removeCurrents,
+    // loadImageCurrents,
+    // onAllLoadedCurrents,
+    loadUV,
+    removeUV,
 
     // --- CURRENTS STATIC
-    staticPrepare,
-    generateGJ,
-    updateStaticCurrentsLayer,
+    // staticPrepare,
+    // generateGJ,
+    updateStaticUV,
+    updateStaticUVmaxSpeed,
 
     // --- CURRENTS ANIMATION
     createAnimCanvas,
@@ -971,14 +1622,59 @@ return this.$store.state.map.maxWindSpeed
     decodeColor,
     decodeColorCurrent,
 
+    // --- PATH PLANNING
+    // initPPmarkers,
+    // addPPmarkers,
+    // removePPmarkers,
+    PPupdateProjection,
+    PPshowHideProjection,
+    // updatePPmap,
+    removePPmap,
+    // boldPPpath,
+    addPath,
+    addWPs,
+    // addProjection,
+    // addConfidence,
+
+    // --- OPASS
+    initOPASSmarkers,
+    addOPASSmarkers,
+    removeOPASSmarkers,
+    removeOPASS,
+    // updateOPASSlonLat,
+    // updateOPASSwpt,
+    updateOPASSsurfacings,
+    // --- DRAWING LINES
+    // startLine,
+    // mapClick,
+    // --- PROFILE TIME
+    // activateProfileTime,
+    // diactivateProfileTime,
+    // linesMarkerDrag,
+    // removeLines,
+    // updateLines,
+    // updateXYplot,
     // --- PULSING DOT
     addPulsingDot,
     updatePulsingDot,
     removePulsingDot,
-
+    // --- MISSIONS
+    updateMissions,
+    addPropertyTextLayer,
+    generateVelocityLayerGJ,
+    addPropertyVelocityLayer,
+    updatePropertyVelocityLayer,
+    removePropertyLayer,
+    // --- MISION PLOTS
+    initMissionPlots,
+    endMissionPlots,
+    updateMissionPlotsSelectedPoints,
+    addSlocumProfilePointsMap,
+    getMissionVariables,
     // --- ALTIMETRY
-    toggleAltimetry,
+    // toggleAltimetry,
     updateAltimetry,
+    updateAltimetryColormap,
     // --- AIS
     updateAIS,
     // --- PROFILE
@@ -990,8 +1686,13 @@ return this.$store.state.map.maxWindSpeed
     argoClicked,
     updateArgoTracks,
     updateArgoProfilePoint,
+    // --- SENTINEL
+    updateSentinelBoxes,
+    updateSentinelImage,
+    removeSentinel,
 
     onMapLoad() {
+      this.map.setFog({})
       this.$store.commit('map/setBounds', this.map.getBounds())
       this.$store.commit('map/setMapCenter', this.map.getCenter())
 
@@ -1003,13 +1704,46 @@ return this.$store.state.map.maxWindSpeed
 
       this.initDepthReading()
       this.map.on('mousemove', this.onMouseMove)
+
+      // this.initPPmarkers()
+      this.initOPASSmarkers()
+
+      // --- TEST GRAYSCALE
+      // const field = 'SST'
+      // const model = 'tt'
+      // const dir = 'HYCOM_SST_20220420_12'
+      // const minOrg=-2
+      // const maxOrg = 35
+      // const step = .1
+
+      // this.map.addSource(`filled_1`, {
+      //   type: 'raster',
+      //   tiles: [
+      //     `${
+      //       // process.env.tuvaq2Url}/mapTiles/${field}/${model}/tiles/${dir}/{z}/{x}/{y}.png?dt=${Date.now()}`
+      //       process.env.tuvaq2Url
+      //     }/img?field=${field}&model=${model}&dir=${dir}&z={z}&x={x}&y={y}&minOrg=${minOrg}&maxOrg=${maxOrg}&step=${step}&dt=${Date.now()}`
+      //   ],
+      //   tilesize: 512
+      // })
+
+      // this.map.addLayer(
+      //   {
+      //     id: `filled_1`,
+      //     type: 'raster',
+      //     source: `filled_1`,
+      //     paint: {
+      //       'raster-resampling': 'nearest',
+      //       'raster-opacity': 1
+      //     }
+      //   }
+      // )
     },
 
     onMapMove() {
       if (
-        this.selected !== null &&
-        (this.selected.field === 'Currents' ||
-          this.selected.field === 'wind') &&
+        this.selected &&
+        this.selected.field.type === 'vector' &&
         this.currentsAnimationOn
       )
         this.clearAnimCanvas()
@@ -1037,15 +1771,13 @@ return this.$store.state.map.maxWindSpeed
     onMapMoveEnd() {
       this.$store.commit('map/setBounds', this.map.getBounds())
       this.$store.commit('map/setMapCenter', this.map.getCenter())
-      if (
-        this.selected !== null &&
-        (this.selected.field === 'Currents' || this.selected.field === 'wind')
-      ) {
+      if (this.selected && this.selected.field.type === 'vector') {
         // this.resetCurrents()
         // this.drawCurrents()
         // this.loadImageCurrents()
-        this.$store.dispatch('map/setRedrawTrue')
+        this.$store.commit('map/setRedrawTrue')
       }
+      // this.$store.commit('map/setRedrawTrue')
     },
 
     onMouseMove(e) {
@@ -1055,21 +1787,61 @@ return this.$store.state.map.maxWindSpeed
       // --- GET DEPTH & ACTIVE LAYER VALUE
       this.$store.commit('map/setDepthAtMouse', this.getDepth(e.lngLat)) // --- In functions.js
       if (this.activeLayerValueAtMouseStatus) this.getActiveLayerValue(e.lngLat)
+
+      // if (this.showBathymetryContours) this.boldBathymetryContourLines(e)
     },
 
-    roundZoom() {
-      this.map.setZoom(Math.round(this.map.getZoom()))
-      this.$store.commit('map/setMapZoom', this.map.getZoom())
+    onZoomEnd() {
+      this.$store.commit('map/setZoomLevel', this.map.getZoom().toFixed(2))
     },
+
+    // roundZoom() {
+    //   this.map.setZoom(Math.round(this.map.getZoom()))
+    //   this.$store.commit('map/setMapZoom', this.map.getZoom())
+    // },
+
+    // updatePPfromCoord(e) {
+    //   const coord = [e.marker._lngLat.lng, e.marker._lngLat.lat]
+    //   this.$store.commit('map/setPPfromCoordinate', coord)
+    // },
+    // updatePPtoCoord(e) {
+    //   const coord = [e.marker._lngLat.lng, e.marker._lngLat.lat]
+    //   this.$store.commit('map/setPPtoCoordinate', coord)
+    // },
 
     resizeEnd() {
+      // this.$store.commit('map/setBounds', this.map.getBounds())
+      // this.$store.commit('map/setMapCenter', this.map.getCenter())
+      // this.$store.commit('map/setRedrawTrue')
       this.map.on('moveend', this.onMapMoveEnd)
       this.onMapMoveEnd()
+      // if (this.selected.field === 'Currents') {
+      //   this.reset()
+      //   this.createAnimCanvas()
+      //   this.drawCurrents()
+      // }
+      // : this.addFilledContour()
+    },
+
+    switchMapProjection() {
+      if (this.mapProjection === '3d') {
+        this.mapProjection = '2d'
+        this.map.setProjection({
+          name: 'mercator',
+        })
+      } else {
+        this.mapProjection = '3d'
+        this.map.setProjection({
+          name: 'globe',
+        })
+        this.map.setFog({})
+      }
+      this.$store.commit('map/setMapProjection', this.mapProjection)
     },
 
     removeAllLayers() {
       // this.resetCurrents()
-      if (!this.currentsLocked) this.removeCurrents()
+      if (!this.currentsLocked) this.removeUV()
       this.removeFilledContour()
       // this.removeIceberg()
     },
@@ -1082,7 +1854,7 @@ return this.$store.state.map.maxWindSpeed
         this.$store.commit('map/setLayerValueAtMouse', '-')
       else {
         field = this.selected.field
-        model = this.selected.modelDir
+        model = this.selected.name
         date = this.$store.state.layers.interDate
         time = this.$store.state.layers.interTime
 
@@ -1102,12 +1874,12 @@ return this.$store.state.map.maxWindSpeed
         const xRem = Math.round(512 * (x - X))
         const yRem = Math.round(512 * (y - Y))
 
-        let depth = ''
-        if (this.$store.state.layers.selected.depthProperties.hasDepth) {
-          depth =
+        let level = ''
+        if (this.selected.hasLevels) {
+          level =
             '_' +
-            this.$store.state.layers.selected.depthProperties.depthValues[
-              this.$store.state.layers.selected.depthProperties.iDepth
+            this.selected.region.levels.values[
+              this.selected.region.levels.iLevel
             ]
         }
 
@@ -1115,11 +1887,12 @@ return this.$store.state.map.maxWindSpeed
 
         let tile
         if (
-          this.selected.field === 'Currents' ||
-          this.selected.field === 'wind'
+          this.selected.field === 'current' ||
+          this.selected.field === 'wind' ||
+          this.selected.field === 'seaiceVelocity'
         ) {
           ;['U', 'V'].forEach((dir) => {
-            tile = `${process.env.tuvaq2Url}/mapTiles/${field}/${model}/tiles${dir}/${model}_${field}_${date}_${time}${depth}/${zoom}/${X}/${Y}.png`
+            tile = `${process.env.tuvaq2Url}/mapTiles/${field}/${model}/tiles${dir}/${model}_${field}_${date}_${time}${level}/${zoom}/${X}/${Y}.png`
             promisses.push(
               axios({
                 method: 'get',
@@ -1160,26 +1933,23 @@ return this.$store.state.map.maxWindSpeed
 
         let value = ''
         if (this.imgLayerData[0].length > 0) {
-          if (
-            this.selectedField.field === 'Currents' ||
-            this.selectedField.field === 'wind'
-          ) {
+          if (this.selected.field.type === 'vector') {
             const u =
-              this.selectedField.colorbar.minOrg +
+              this.selected.field.colorbar.minOrg +
               this.imgLayerData[0][4 * (xRem + 512 * yRem)] *
-                this.selectedField.colorbar.step
+                this.selected.field.colorbar.step
             const v =
-              this.selectedField.colorbar.minOrg +
+              this.selected.field.colorbar.minOrg +
               this.imgLayerData[0][4 * (xRem + 512 * yRem)] *
-                this.selectedField.colorbar.step
+                this.selected.field.colorbar.step
             value = Math.sqrt(u ** 2 + v ** 2)
           } else {
             value =
-              this.selectedField.colorbar.minOrg +
+              this.selected.field.colorbar.minOrg +
               this.imgLayerData[0][4 * (xRem + 512 * yRem)] *
-                this.selectedField.colorbar.step
+                this.selected.field.colorbar.step
           }
-          const unit = this.selectedField.unit
+          const unit = this.selected.field.unit
           this.$store.commit(
             'map/setLayerValueAtMouse',
             `${value.toFixed(1)} ${unit}`
@@ -1200,24 +1970,14 @@ return this.$store.state.map.maxWindSpeed
         if (!feature.properties.thickness) {
           feature.properties.thickness = 2
         }
-
-        if (this.drawMode === 'log' && !('timestamp' in feature.properties)) {
-          feature.properties.timestamp = moment().unix()
-          feature.properties.name = null
-          feature.properties.text = ''
-        }
       })
 
       this.draw.set(gj)
 
-      if (this.drawMode === 'log') {
-        this.logSelectedMission.logs = this.sortByTime(gj)
-      } else {
-        this.$store.commit('map/setDrawGJ', gj)
+      this.$store.commit('map/setDrawGJ', gj)
 
-        if (this.drawMode === 'profile') this.updateProfile()
-        if (this.drawMode === 'distance') this.updateDistance()
-      }
+      if (this.drawMode === 'profile') this.updateProfile()
+      if (this.drawMode === 'distance') this.updateDistance()
     },
 
     deleteDraw(e) {

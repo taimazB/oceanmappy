@@ -1,5 +1,3 @@
-import tilebelt from '@mapbox/tilebelt'
-
 // export function resetCurrents() {
 //   cancelAnimationFrame(this.reqAnimID)
 //   try {
@@ -22,10 +20,8 @@ export function createAnimCanvas() {
 }
 
 export function clearAnimCanvas() {
-  // const width = this.wind.windData.width
-  // const height = this.wind.windData.widtheight
-  const width = this.wind.gl.canvas.width
-  const height = this.wind.gl.canvas.height
+  const width = this.wind.windData.width
+  const height = this.wind.windData.widtheight
 
   // --- Create an image for webgl
   const webglImage = new Image()
@@ -52,7 +48,8 @@ export function clearAnimCanvas() {
 }
 
 export function animPrepare(width, height, cnvTmp, bnds) {
-  const field = this.$store.state.layers.selected.field
+  const field = this.$store.state.layers.selected.field.name
+
 
   // --- Create an image for webgl
   this.wind.numParticles = 5000 // 40000
@@ -84,6 +81,7 @@ export function animPrepare(width, height, cnvTmp, bnds) {
   // const minLat = tilebelt.tileToBBOX(tileAddress.sw)[1]
   // const maxLon = tilebelt.tileToBBOX(tileAddress.ne)[2]
   // const maxLat = tilebelt.tileToBBOX(tileAddress.ne)[3]
+  // if (minLon >= maxLon) minLon -= 360
   if (bnds.minLon >= bnds.maxLon) bnds.minLon -= 360
   
   try {

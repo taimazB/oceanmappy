@@ -21,7 +21,7 @@
     <!-- COLORBAR MODIFIER -->
     <v-dialog v-model="colorbarDialog" width="auto">
       <v-card>
-        <v-card-title style="place-content: center">SST</v-card-title>
+        <!-- <v-card-title style="place-content: center"></v-card-title> -->
         <v-row>
           <v-col cols="auto">
             <v-row
@@ -118,8 +118,6 @@
 </template>
 
 <script>
-import moment from 'moment'
-
 export default {
   props: ['field'],
 
@@ -306,20 +304,10 @@ export default {
       })
 
       // --- New session ID
-      this.$store.commit(
-        'map/setSessionID',
-        `${moment.utc().format('YYYYMMDDTHHmmss-SSS')}_${parseInt(
-          10000 * Math.random()
-        )}_${this.username}`
-      )
+      this.renewSessionID()
 
-      console.log(this.field)
-      // const colorbar = this.field.colorbar
-      this.$store.commit('layers/setColormap', {
-        field: this.field,
-        colormap: this.colormap,
-      })
-      // colorbar.colormap = JSON.parse(JSON.stringify(this.colormap))
+      const colorbar = this.field.colorbar
+      colorbar.colormap = JSON.parse(JSON.stringify(this.colormap))
     },
 
     removeColor(i) {
@@ -335,12 +323,7 @@ export default {
       })
 
       // --- New session ID
-      this.$store.commit(
-        'map/setSessionID',
-        `${moment.utc().format('YYYYMMDDTHHmmss-SSS')}_${parseInt(
-          10000 * Math.random()
-        )}_${this.username}`
-      )
+      this.renewSessionID()
 
       const colorbar = this.field.colorbar
       this.colormap = JSON.parse(JSON.stringify(colorbar.colormapOrg))
@@ -362,7 +345,7 @@ export default {
           url: `${process.env.tuvaq2Url}/getMinMax`,
           data: {
             field: this.field.field,
-            model: selected.modelDir,
+            model: selected.directory,
             dir: 'filled_gray',
             SW,
             NE,
@@ -382,10 +365,10 @@ export default {
           }
           this.apply()
         })
-      } else if (this.field.field === 'Altimetry') {
+      } else if (this.field.field === 'altimetry') {
         const selectedAltimetryVariable =
-          this.$store.state.layers.selectedAltimetryVariable
-        const features = this.$store.state.layers.altimetryShownGJs.features
+          this.$store.state.altimetry.selectedAltimetryPackage.variable
+        const features = this.$store.state.altimetry.altimetryShownGJs.features
 
         const visibleFeatures = features.filter(
           (f) =>
@@ -411,21 +394,20 @@ export default {
         this.apply()
       } else {
         const selected = this.$store.state.layers.selected
-        let dir = `${selected.modelDir}_${selected.field}_${this.$store.state.layers.interDate}_${this.$store.state.layers.interTime}`
-        if (this.$store.state.layers.selected.depthProperties.hasDepth)
-          dir = `${dir}_${
-            this.$store.state.layers.selected.depthProperties.depthValues[
-              this.$store.state.layers.selected.depthProperties.iDepth
-            ]
-          }`
+        let level = ''
+        if (selected.hasLevels)
+          level = selected.region.levels.values[selected.region.levels.iLevel]
 
         this.$axios({
           method: 'post',
-          url: `${process.env.tuvaq2Url}/getMinMax`,
+          url: `${process.env.tuvaq2Url}/getMinMax_20221026`,
           data: {
-            field: this.field.name,
-            model: selected.modelDir,
-            dir,
+            model: selected.modelName,
+            multiRegion:selected.isMultiRegion,
+            regionName:selected.region.name,
+            field: selected.field.name,
+            dateTime: this.$store.state.layers.interDateTime.format('YYYYMMDD_HH'),
+            level,
             SW,
             NE,
           },
@@ -438,9 +420,7 @@ export default {
           const max = minMax[1]
           const n = this.colormap.length
           for (let i = 0; i < n; i++) {
-            const value = min + (i * (max - min)) / (n - 1)
-            this.colormap[i].value =
-              Math.round(10 * (this.minOrg + this.step * value)) / 10
+            this.colormap[i].value = min + (i * (max - min)) / (n - 1)
           }
           this.apply()
         })

@@ -229,3 +229,12 @@ input {
 .mapboxgl-ctrl{
   margin: 0;
 }
+
+.v-input__slot{
+  padding:0 5px!important;
+  background: none !important;
+}
+
+.v-input__control{
+  min-height: auto!important;
+}

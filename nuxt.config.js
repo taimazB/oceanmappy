@@ -2,13 +2,25 @@ import colors from 'vuetify/es5/util/colors'
 
 export default {
   env: {
-    tuvaq2Url: process.env.NODE_ENV === "development" ?
-    "https://192.168.2.12:4000" : "https://process.oceangns.com",
+    graphUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:4000/graphql'
+        : 'https://api.oceangns.com/brd-ocean-methods',
+    //  : 'http://localhost:4000/graphql',
+    baseUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:4000'
+        : 'https://api.oceangns.com',
+    // : 'http://localhost:4000',
+    tuvaq2Url:
+      process.env.NODE_ENV === 'development'
+        ? 'https://glidercruncher1.local:4000'
+        : 'https://process.oceangns.com'
   },
 
   head: {
-    titleTemplate: '%s - OceanMappy',
-    title: 'Ocean Mappy',
+    titleTemplate: '%s - OceanGNS',
+    title: 'OceanGNS',
     htmlAttrs: {
       lang: 'en'
     },
@@ -38,23 +50,36 @@ export default {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
+    'vue-slick-carousel/dist/vue-slick-carousel.css',
+    'vue-slick-carousel/dist/vue-slick-carousel-theme.css',
     'assets/css/custom',
     'assets/css/style',
     'assets/css/global',
+    'assets/css/tooltip',
+    'assets/css/bulma.css',
+    'assets/css/core_demo.css',
+    'assets/css/icons.min.css',
+    'assets/css/core_flashy.css',
+    'assets/css/custom_bulma.css',
     'node_modules/vue-multiselect/dist/vue-multiselect.min.css'
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    { src: '~/plugins/vee-validate.js', ssr: false },
-    // { src: '~/plugins/ga.js', mode: 'client' },
-    { src: '~/plugins/underscore', ssr: false },
-    { src: '~/plugins/functions', ssr: false },
-    // { src: '~/plugins/mapbox', mode: 'client' },
-    { src: '@/plugins/aos', ssr: false },
     { src: '~/plugins/vue-editor', ssr: false },
+    { src: '~/plugins/vue-slick-carousel.js',ssr:false},
+    { src: '~/plugins/leaflet.js', ssr: false },
+    // { src: '~/plugins/ga.js', mode: 'client' },
+    { src: '~/plugins/vee-validate.js', ssr: false },
+    { src: '~/plugins/underscore', ssr: false },
+    // { src: '~/plugins/mapbox', mode: 'client' },
+    { src: '~/plugins/functions', ssr: false },
+    { src: '@/plugins/aos', ssr: false },
     { src: '~/plugins/vue-multiselect', ssr: false },
+    { src: '~/plugins/vue-carousel', ssr: false },
+    { src: '~/plugins/vue-quill-editor', ssr: false },
     { src: '~/plugins/GoogleAnalytics.js', mode: 'client' },
+    { src: '~/plugins/sse.js', mode: 'client' },
     { src: '~/plugins/vTooltip.js', mode: 'client' },
     { src: '~/plugins/chart.js', mode: 'client' },
     { src: '~/plugins/numericInput.js', mode: 'client' }
@@ -65,6 +90,7 @@ export default {
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
+    'nuxt-leaflet',
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
     '@nuxtjs/google-fonts'
@@ -105,6 +131,11 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    // extend(config, { isDev, isClient }) {
+    //   config.node = {
+    //     fs: 'empty'
+    //   }
+    // },
     transpile: ['vee-validate/dist/rules']
   }
 }

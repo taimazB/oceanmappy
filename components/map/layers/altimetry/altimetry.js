@@ -2,10 +2,10 @@ import mapboxgl from 'mapbox-gl'
 import axios from 'axios'
 import moment from 'moment'
 
-export function toggleAltimetry() {
+export function updateAltimetry() {
   // --- ADD ALTIMETRY
-  if (this.selectedAltimetryVariable) {
-    this.$store.commit('layers/setLoadingAltimetry', true)
+  if (this.selectedAltimetryPackage.variable) {
+    this.$store.commit('altimetry/setLoadingAltimetry', true)
 
     if (!Object.keys(this.map.getStyle().sources).includes('altimetry')) {
       this.map.addSource('altimetry', {
@@ -35,7 +35,7 @@ export function toggleAltimetry() {
         this.map.getCanvas().style.cursor = 'pointer'
         // Set constants equal to the current feature's magnitude, location, and time
         const value =
-          event.features[0].properties[this.selectedAltimetryVariable]
+          event.features[0].properties[this.selectedAltimetryPackage.variable]
         const time = event.features[0].properties.time
 
         // Check whether features exist
@@ -43,7 +43,7 @@ export function toggleAltimetry() {
 
         const popupText = `<div>
       <div>${moment.utc(1000 * time).format('D MMM, HH:mm')}</div>
-      <div>${Math.round(100000 * value) / 100000}</div>
+      <div>${Math.round(100000 * value) / 100000} m</div>
       </div>`
         popup.setLngLat(event.lngLat).setHTML(popupText).addTo(this.map)
 
@@ -95,16 +95,16 @@ export function toggleAltimetry() {
       this.sortLayers()
     }
 
-    const altimetryLoadedGJs = this.$store.state.layers.altimetryLoadedGJs
+    const altimetryLoadedGJs = this.$store.state.altimetry.altimetryLoadedGJs
     const promises = []
 
-    this.selectedAltimetrySatellites.forEach((satellite) => {
-      this.selectedAltimetryDates.forEach((date) => {
+    this.selectedAltimetryPackage.satellites.forEach((satellite) => {
+      this.selectedAltimetryPackage.dates.forEach((date) => {
         if (
           !altimetryLoadedGJs.map((obj) => obj.satellite).includes(satellite) ||
           !altimetryLoadedGJs.map((obj) => obj.date).includes(date)
         ) {
-          const url = `${process.env.tuvaq2Url}/mapTiles/Altimetry/CMEMS/gj/${satellite}_${date}.geojson`
+          const url = `${process.env.tuvaq2Url}/models/Altimetry/gj/${satellite}_${date}.geojson`
           promises.push(
             axios({ method: 'get', url }).catch((err) => {
               console.log(err)
@@ -129,10 +129,29 @@ export function toggleAltimetry() {
           })
         }
       })
-      if (this.selectedAltimetryVariable)
-        this.updateAltimetry(altimetryLoadedGJs)
 
-      this.$store.commit('layers/setLoadingAltimetry', false)
+      const features = []
+      this.selectedAltimetryPackage.satellites.forEach((satellite) => {
+        this.selectedAltimetryPackage.dates.forEach((date) => {
+          const preloadedSatDate = altimetryLoadedGJs.filter(
+            (obj) => obj.satellite === satellite && obj.date === date
+          )[0]
+
+          if (preloadedSatDate) features.push(...preloadedSatDate.gj.features)
+        })
+      })
+
+      const gj = {
+        type: 'FeatureCollection',
+        features,
+      }
+      this.$store.commit('altimetry/setAltimetryShownGJs', gj)
+
+      this.map.getSource('altimetry').setData(gj)
+
+      // this.updateAltimetry(altimetryLoadedGJs)
+
+      this.$store.commit('altimetry/setLoadingAltimetry', false)
     })
   } else {
     try {
@@ -142,28 +161,36 @@ export function toggleAltimetry() {
   }
 }
 
-export function updateAltimetry(altimetryLoadedGJs) {
-  const features = []
-  this.selectedAltimetrySatellites.forEach((satellite) => {
-    this.selectedAltimetryDates.forEach((date) => {
-      const preloadedSatDate = altimetryLoadedGJs.filter(
-        (obj) => obj.satellite === satellite && obj.date === date
-      )[0]
-
-      if (preloadedSatDate) features.push(...preloadedSatDate.gj.features)
-    })
-  })
-
-  const gj = {
-    type: 'FeatureCollection',
-    features,
-  }
-  this.$store.commit('layers/setAltimetryShownGJs', gj)
-
-  this.map.getSource('altimetry').setData(gj)
+export function updateAltimetryColormap() {
   this.map.setPaintProperty(
     'altimetry',
     'circle-color',
     this.altimetryMapboxColormap
   )
 }
+
+// export function updateAltimetry(altimetryLoadedGJs) {
+//   const features = []
+//   this.selectedAltimetrySatellites.forEach((satellite) => {
+//     this.selectedAltimetryDates.forEach((date) => {
+//       const preloadedSatDate = altimetryLoadedGJs.filter(
+//         (obj) => obj.satellite === satellite && obj.date === date
+//       )[0]
+
+//       if (preloadedSatDate) features.push(...preloadedSatDate.gj.features)
+//     })
+//   })
+
+//   const gj = {
+//     type: 'FeatureCollection',
+//     features,
+//   }
+//   this.$store.commit('layers/setAltimetryShownGJs', gj)
+
+//   this.map.getSource('altimetry').setData(gj)
+//   this.map.setPaintProperty(
+//     'altimetry',
+//     'circle-color',
+//     this.altimetryMapboxColormap
+//   )
+// }

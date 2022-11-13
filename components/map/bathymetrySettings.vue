@@ -82,7 +82,7 @@ export default {
         let levels
         if (this.selectedLevels.length > 0) levels = this.selectedLevels
         else levels = ['']
-        this.$store.commit('layers/setSelectedBathymetryContourLevels', levels)
+        this.$store.commit('layers/setSelectedBathymetryContours', levels)
       },
       deep: true
     }

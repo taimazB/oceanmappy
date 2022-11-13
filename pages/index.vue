@@ -271,7 +271,6 @@ export default {
         data, // --- instead of data: data
       })
         .then((results) => {
-          console.log(results.data);
           const availDateTimes = results.data.dateTimes.map((d) => {
             const arr = d.split('_')
             return { date: arr[0], time: arr[1] }

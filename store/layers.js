@@ -1,13 +1,8 @@
+import moment from 'moment'
+
 export const state = () => ({
   selected: null,
   selectedBathymetry: '',
-  selectedAltimetrySatellites: [],
-  selectedAltimetryDates: [],
-  selectedAltimetryVariable: null,
-  altimetryLoadedGJs: [], // --- [{satellite:'', date:'', gj:''}, ...]
-  altimetryShownGJs: [], // --- Stores altimetry gj's already shown on the map.  Used for finding min/max in colorbar.
-  loadingAltimetry: false,
-  altimetryAvailSatDates: {},
 
   // --- Keep track of last selected date and time between models
   interDate: null,
@@ -20,7 +15,7 @@ export const state = () => ({
     models: [
       {
         source: 'SRTM',
-        modelDir: 'SRTM',
+        directory: 'SRTM',
         longName: '',
         link: '',
         region: 'G',
@@ -112,7 +107,7 @@ export const state = () => ({
         //     },
         //   ],
         // },
-        availContourLevels: [].concat(
+        availContours: [].concat(
           [...Array(99).keys()].map((k) => -10 * k), // --- 0 ... -990 , step 10
           [...Array(99).keys()].map((k) => -20 * k - 1000), // --- -1000 ... -2980 , step 20
           [...Array(19).keys()].map((k) => -50 * k - 3000), // --- -3000 ... -4950 , step 50
@@ -122,7 +117,7 @@ export const state = () => ({
       },
       // {
       //   source: 'GEBCO',
-      //   modelDir: 'GEBCO',
+      //   directory: 'GEBCO',
       //   longName: '',
       //   region: 'G',
       //   imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
@@ -217,7 +212,7 @@ export const state = () => ({
       // },
       // {
       //   source: 'NONNA',
-      //   modelDir: 'NONNA',
+      //   directory: 'NONNA',
       //   longName: '',
       //   region: 'R',
       //   imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
@@ -285,7 +280,7 @@ export const state = () => ({
       // },
       // {
       //   source: 'NOAA',
-      //   modelDir: 'NOAA',
+      //   directory: 'NOAA',
       //   region: 'R',
       //   colorbar: {
       //     hasColorbar: true
@@ -295,7 +290,7 @@ export const state = () => ({
       // }
       {
         source: 'greatLakes',
-        modelDir: 'greatLakes',
+        directory: 'greatLakes',
         longName:
           'NOAA was engaged in a program to compile Great Lakes bathymetric data and make them readily available to the public. This program was managed by NCEI and relied on the cooperation of NOAA/Great Lakes Environmental Research Laboratory, NOAA/National Ocean Service, the Canadian Hydrographic Service, other agencies, and academic laboratories.',
         link: 'https://www.ngdc.noaa.gov/mgg/greatlakes/',
@@ -304,10 +299,11 @@ export const state = () => ({
         imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
         min: -390,
         max: 0,
-        availContourLevels: [...Array(38).keys()].map((k) => -10 * k), // --- 0 ... -380 , step 10
+        availContours: [...Array(38).keys()].map((k) => -10 * k), // --- 0 ... -380 , step 10
       },
     ],
     colorbar: {
+      hasColorbar: true,
       step: 1,
       minOrg: 0,
       toFixed: 0,
@@ -377,104 +373,245 @@ export const state = () => ({
 
   categories: [
     {
-      name: 'Currents',
+      type: 'ocean',
+      name: 'current',
       show: true,
-      atmosphere: false,
-      longName: null,
       fields: [
         {
-          name: 'Currents',
+          name: 'current',
           models: [
             {
-              category: 'Currents',
-              field: 'Currents',
+              category: 'current',
+              field: 'current',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
+              name: 'HYCOM',
               longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
               link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                // depthValues: [
-                //   0, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70,
-                //   80, 90, 100, 125, 150, 200, 250, 300, 350, 400, 500, 600, 700,
-                //   800, 900, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000,
-                // ],
-                depthLabels: ['Surface', '20 - 200 m', '50 - 1000 m'],
-                depthValues: ['00000-00010', '00020-00200', '00050-01000'],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 85 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 41,
+                    values: [
+                      'mean',
+                      'bottom',
+                      5000,
+                      4000,
+                      3000,
+                      2500,
+                      2000,
+                      1500,
+                      1250,
+                      1000,
+                      900,
+                      800,
+                      700,
+                      600,
+                      500,
+                      400,
+                      350,
+                      300,
+                      250,
+                      200,
+                      150,
+                      125,
+                      100,
+                      90,
+                      80,
+                      70,
+                      60,
+                      50,
+                      45,
+                      40,
+                      35,
+                      30,
+                      25,
+                      20,
+                      15,
+                      12,
+                      10,
+                      8,
+                      6,
+                      4,
+                      2,
+                      0,
+                    ],
+                  },
+                  bnds: {
+                    minLon: -180,
+                    maxLon: 180,
+                    minLat: -80,
+                    maxLat: 85,
+                  },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'Currents',
-              field: 'Currents',
+              category: 'current',
+              field: 'current',
               subProducts: { hasSub: false },
-              modelDir: 'RIOPS',
-              btnText: 'RIOPS',
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: {
+                    minLon: -180,
+                    maxLon: 180,
+                    minLat: -80,
+                    maxLat: 85,
+                  },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'current',
+              field: 'current',
+              subProducts: { hasSub: false },
+              name: 'RIOPS',
               longName: 'Regional Ice Ocean Prediction System',
               link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_riops/readme_riops-datamart-alpha_en/',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: ['Surface', '20 - 200 m', '50 - 1000 m'],
-                // depthLabels: [
-                //     '1.5 - 2.0 km',
-                //     '1.0 - 1.5 km',
-                //     '500 - 1000 m',
-                //     '200 - 500 m',
-                //     '100 - 200 m',
-                //     '50 - 100 m',
-                //     '10 - 50 m',
-                //     'Surface',
-                // ],
-                depthValues: ['00000-00010', '00020-00200', '00050-01000'],
-                // depthValues: [
-                //     '1500-2000',
-                //     '1000-1500',
-                //     '0500-1000',
-                //     '0200-0500',
-                //     '0100-0200',
-                //     '0050-0100',
-                //     '0010-0050',
-                //     '0000-0010',
-                // ],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
-              imgBndsZoomed: false,
-              min: 0,
-              max: 3,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'North of 30',
+                  levels: {
+                    hasLevels: false,
+                    // iLevel: 39,
+                    // values: [
+                    //   '5000', '4000', '3000', '2500', '2000', '1500', '1250', '1000', '0900','0800', '0700',
+                    //   '0600', '0500', '0400', '0350', '0300', '0250', '0200', '0150', '0125', '0100', '0090', '0080', '0070',
+                    //   '0060', '0050', '0045', '0040', '0035', '0030', '0025', '0020', '0015', '0012', '0010', '0008','0006', '0004', '0002', '0000'
+                    // ],
+                  },
+                  bnds: {
+                    minLon: -180,
+                    maxLon: 180,
+                    minLat: -85,
+                    maxLat: 85,
+                  },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'Currents',
-              field: 'Currents',
+              category: 'current',
+              field: 'current',
               subProducts: { hasSub: false },
-              modelDir: 'CMC',
-              btnText: 'CMC',
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 98,
+                    values: [
+                      5657.8, 5454.7, 5253.2, 5053.5, 4855.5, 4659.3, 4464.9,
+                      4272.3, 4081.4, 3892.4, 3705.2, 3519.8, 3336.3, 3154.5,
+                      2974.6, 2796.5, 2620.2, 2445.6, 2272.9, 2101.9, 1932.6,
+                      1765.1, 1599.4, 1436.0, 1275.5, 1120.4, 975.7, 850.7,
+                      754.8, 687.9, 640.6, 603.6, 571.6, 542.3, 514.8, 488.7,
+                      463.8, 440.0, 417.4, 395.8, 375.1, 355.5, 336.8, 318.9,
+                      301.9, 285.8, 270.4, 255.7, 241.8, 228.6, 216.0, 204.0,
+                      192.7, 181.9, 171.6, 161.9, 152.7, 143.9, 135.6, 127.7,
+                      120.2, 113.1, 106.4, 100.0, 93.9, 88.2, 82.7, 77.6, 72.6,
+                      68.0, 63.6, 59.4, 55.4, 51.7, 48.1, 44.7, 41.5, 38.5,
+                      35.6, 32.9, 30.3, 27.8, 25.5, 23.2, 21.1, 19.1, 17.2,
+                      15.4, 13.7, 12.1, 10.5, 9.0, 7.6, 6.3, 5.0, 3.8, 2.7, 1.6,
+                      0.5,
+                    ],
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 67,
+                    values: [
+                      4488.2, 4290.0, 4093.2, 3898.0, 3704.7, 3513.4, 3324.6,
+                      3138.6, 2955.6, 2776.0, 2600.4, 2429.0, 2262.4, 2101.0,
+                      1945.3, 1795.7, 1652.6, 1516.4, 1387.4, 1265.9, 1152.0,
+                      1045.9, 947.5, 856.7, 773.4, 697.3, 628.0, 565.3, 508.6,
+                      457.6, 411.8, 370.7, 333.9, 300.9, 271.4, 244.9, 221.1,
+                      199.8, 180.6, 163.2, 147.4, 133.1, 120.0, 108.0, 97.0,
+                      86.9, 77.6, 69.0, 61.1, 53.9, 47.2, 41.2, 35.7, 30.9,
+                      26.6, 22.8, 19.4, 16.5, 14.0, 11.8, 9.8, 8.1, 6.5, 5.1,
+                      3.9, 2.7, 1.6, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 38,
+                    values: [
+                      414.5, 387.6, 360.7, 333.8, 306.8, 279.9, 253.1, 226.3,
+                      199.6, 173.1, 147.1, 121.9, 98.1, 76.6, 58.5, 44.5, 34.7,
+                      28.2, 24.1, 21.4, 19.5, 18.0, 16.8, 15.6, 14.6, 13.5,
+                      12.5, 11.5, 10.5, 9.5, 8.5, 7.5, 6.5, 5.5, 4.5, 3.5, 2.5,
+                      1.5, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'current',
+              field: 'current',
+              subProducts: { hasSub: false },
+              name: 'RDPS',
               longName: 'Global Environmental Multiscale Model',
               link: 'https://en.wikipedia.org/wiki/Global_Environmental_Multiscale_Model',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -71, maxLon: -56, minLat: 45.5, maxLat: 52 },
-              imgBndsZoomed: false,
-              min: 0,
-              max: 1,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'GOSL',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -71, maxLon: -56, minLat: 45.5, maxLat: 52 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             // {
-            //   field: 'Currents',
-            //   modelDir: 'WMOP',
-            //   btnText: 'WMOP',
+            //   field: 'current',
+            //   name: 'WMOP',
             //   longName:
             //     'Western Mediterranean OPerational forecasting system (surface)',
             //   depthProperties: {
@@ -492,9 +629,8 @@ export const state = () => ({
             //   unit: '<sup>m</sup>&frasl;<sub>s</sub>'
             // },
             // {
-            //   field: 'Currents',
-            //   modelDir: 'CMEMS',
-            //   btnText: 'CMEMS',
+            //   field: 'current',
+            //   name: 'CMEMS',
             //   longName: 'Copernicus Monitoring Environment Marine Service',
             //   depthProperties: {
             //     hasDepth: false
@@ -551,69 +687,73 @@ export const state = () => ({
             //   unit: '<sup>m</sup>&frasl;<sub>s</sub>'
             // },
             {
-              category: 'Currents',
-              field: 'Currents',
-              modelDir: 'Doppio',
-              btnText: 'Doppio',
+              category: 'current',
+              field: 'current',
+              name: 'Doppio',
               longName: '',
               link: 'https://gmd.copernicus.org/articles/13/3709/2020/',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: ['avgDepth'],
-                depthValues: ['avgDepth'],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
-              imgBndsZoomed: false,
-              min: 0,
-              max: 3,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'Currents',
-              field: 'Currents',
-              modelDir: 'Barents',
-              btnText: 'Barents',
+              category: 'current',
+              field: 'current',
+              name: 'Barents',
               longName: '',
-              link: 'https://www.met.no/hav-og-nordomrader-landing',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: ['Surface', '20 - 200 m', '50 - 1000 m'],
-                depthValues: ['surface', '0020-0200', '0200-1000'],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
-              imgBndsZoomed: false,
-              min: 0,
-              max: Math.sqrt(2),
-              availDateTimes: [],
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 15,
+                    values: [
+                      3000, 2000, 1000, 500, 300, 250, 200, 150, 100, 75, 50,
+                      25, 15, 10, 3, 0,
+                    ],
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'Currents',
-              field: 'Currents',
+              category: 'current',
+              field: 'current',
               subProducts: { hasSub: false },
-              modelDir: 'NorKyst800m',
-              btnText: 'NorKyst',
+              name: 'NorKyst800m',
               longName:
                 'Norkyst-800 is used as the main forecast tool for ocean forecasting at the coast of Norway.',
               link: 'https://ocean.met.no/models',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: ['Surface', '20 - 200 m', '50 - 1000 m'],
-                depthValues: ['surface', '0020-0200', '0200-1000'],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
-              imgBndsZoomed: false,
-              min: 0,
-              max: 1.5 * Math.sqrt(2),
-              availDateTimes: [],
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
           ],
           colorbar: {
@@ -680,153 +820,392 @@ export const state = () => ({
       ],
     },
     {
-      name: 'SST',
+      type: 'ocean',
+      name: 'temperature',
       show: true,
-      atmosphere: false,
-      longName: 'Sea Surface Temperature',
+      longName: null,
       fields: [
         {
-          name: 'SST',
+          name: 'temperature',
           models: [
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'JPLMUR41',
-              btnText: 'JPLMUR',
+              name: 'JPLMUR41',
               longName:
                 'Level 4 MUR Global Foundation Sea Surface Temperature Analysis (v4.1)',
               link: 'https://podaac.jpl.nasa.gov/dataset/MUR-JPL-L4-GLOB-v4.1',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'Coraltemp',
-              btnText: 'Coraltemp',
+              name: 'Coraltemp',
               longName:
                 'Daily Global 5km Satellite Coral Bleaching Heat Stress Monitoring (v3.1)',
               link: 'https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:CRW-5km-HeatStressProducts',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
+              name: 'HYCOM',
               longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
               link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-                iDepth: 39,
-                depthValues: [
-                  5000, 4000, 3000, 2500, 2000, 1500, 1250, 1000, 900, 800, 700,
-                  600, 500, 400, 350, 300, 250, 200, 150, 125, 100, 90, 80, 70,
-                  60, 50, 45, 40, 35, 30, 25, 20, 15, 12, 10, 8, 6, 4, 2, 0,
-                ],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 40,
+                    values: [
+                      'bottom',
+                      5000,
+                      4000,
+                      3000,
+                      2500,
+                      2000,
+                      1500,
+                      1250,
+                      1000,
+                      900,
+                      800,
+                      700,
+                      600,
+                      500,
+                      400,
+                      350,
+                      300,
+                      250,
+                      200,
+                      150,
+                      125,
+                      100,
+                      90,
+                      80,
+                      70,
+                      60,
+                      50,
+                      45,
+                      40,
+                      35,
+                      30,
+                      25,
+                      20,
+                      15,
+                      12,
+                      10,
+                      8,
+                      6,
+                      4,
+                      2,
+                      0,
+                    ],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'RIOPS',
-              btnText: 'RIOPS',
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'temperature',
+              field: 'temperature',
+              subProducts: { hasSub: false },
+              name: 'RIOPS',
               longName: 'Regional Ice Ocean Prediction System',
               link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_riops/readme_riops-datamart-alpha_en/',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'North of 30',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'CIOPS',
-              btnText: 'CIOPS',
+              name: 'Barents',
               longName: '',
-              link: '',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 15,
+                    values: [
+                      3000, 2000, 1000, 500, 300, 250, 200, 150, 100, 75, 50,
+                      25, 15, 10, 3, 0,
+                    ],
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'SST',
-              field: 'SST',
+              category: 'temperature',
+              field: 'temperature',
               subProducts: { hasSub: false },
-              modelDir: 'Barents',
-              btnText: 'Barents',
-              longName: '',
-              link: 'https://www.met.no/hav-og-nordomrader-landing',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'GOES16',
+              longName: 'Geostationary Operational Environmental Satellites',
+              description:
+                "GOES-16, formerly known as GOES-R before reaching geostationary orbit, is the first of the GOES-R series of Geostationary Operational Environmental Satellites (GOES) operated by NASA and the National Oceanic and Atmospheric Administration (NOAA). GOES-16 serves as the operational geostationary weather satellite in the GOES East position at 75.2°W, providing a view centered on the Americas. GOES-16 provides high spatial and temporal resolution imagery of the Earth through 16 spectral bands at visible and infrared wavelengths using its Advanced Baseline Imager (ABI). GOES-16's Geostationary Lightning Mapper (GLM) is the first operational lightning mapper flown in geostationary orbit. The spacecraft also includes four other scientific instruments for monitoring space weather and the Sun.",
+              link: 'https://www.goes-r.gov/',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -135, maxLon: -13, minLat: -80, maxLat: 65 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 0.1,
+            minOrg: -2,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: -2,
+                color: '#cc00cc',
+              },
+              {
+                value: 0,
+                color: '#ff99ff',
+              },
+              {
+                value: 0.1,
+                color: '#0066cc',
+              },
+              {
+                value: 10,
+                color: '#66ffcc',
+              },
+              {
+                value: 10.1,
+                color: '#009933',
+              },
+              {
+                value: 20,
+                color: '#ccff66',
+              },
+              {
+                value: 20.1,
+                color: '#ffff00',
+              },
+              {
+                value: 30,
+                color: '#ff9933',
+              },
+              {
+                value: 30.1,
+                color: '#ff0000',
+              },
+              {
+                value: 35,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: -2,
+                color: '#cc00cc',
+              },
+              {
+                value: 0,
+                color: '#ff99ff',
+              },
+              {
+                value: 0.1,
+                color: '#0066cc',
+              },
+              {
+                value: 10,
+                color: '#66ffcc',
+              },
+              {
+                value: 10.1,
+                color: '#009933',
+              },
+              {
+                value: 20,
+                color: '#ccff66',
+              },
+              {
+                value: 20.1,
+                color: '#ffff00',
+              },
+              {
+                value: 30,
+                color: '#ff9933',
+              },
+              {
+                value: 30.1,
+                color: '#ff0000',
+              },
+              {
+                value: 35,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: '&deg;C',
+          icon: 'mdi-thermometer',
+          hasSetting: false,
+        },
+        {
+          name: 'potentialTemperature',
+          models: [
             {
-              category: 'SST',
-              field: 'SST',
-              subProducts: { hasSub: false },
-              modelDir: 'GOES16',
-              btnText: 'GOES16',
-              longName: 'GOES16 Hourly Sea Surface Temperature Fields',
-              link: 'https://cwcgom.aoml.noaa.gov/erddap/info/goes16SSThourly/index.html',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              category: 'temperature',
+              field: 'potentialTemperature',
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 98,
+                    values: [
+                      5657.8, 5454.7, 5253.2, 5053.5, 4855.5, 4659.3, 4464.9,
+                      4272.3, 4081.4, 3892.4, 3705.2, 3519.8, 3336.3, 3154.5,
+                      2974.6, 2796.5, 2620.2, 2445.6, 2272.9, 2101.9, 1932.6,
+                      1765.1, 1599.4, 1436.0, 1275.5, 1120.4, 975.7, 850.7,
+                      754.8, 687.9, 640.6, 603.6, 571.6, 542.3, 514.8, 488.7,
+                      463.8, 440.0, 417.4, 395.8, 375.1, 355.5, 336.8, 318.9,
+                      301.9, 285.8, 270.4, 255.7, 241.8, 228.6, 216.0, 204.0,
+                      192.7, 181.9, 171.6, 161.9, 152.7, 143.9, 135.6, 127.7,
+                      120.2, 113.1, 106.4, 100.0, 93.9, 88.2, 82.7, 77.6, 72.6,
+                      68.0, 63.6, 59.4, 55.4, 51.7, 48.1, 44.7, 41.5, 38.5,
+                      35.6, 32.9, 30.3, 27.8, 25.5, 23.2, 21.1, 19.1, 17.2,
+                      15.4, 13.7, 12.1, 10.5, 9.0, 7.6, 6.3, 5.0, 3.8, 2.7, 1.6,
+                      0.5,
+                    ],
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 67,
+                    values: [
+                      4488.2, 4290.0, 4093.2, 3898.0, 3704.7, 3513.4, 3324.6,
+                      3138.6, 2955.6, 2776.0, 2600.4, 2429.0, 2262.4, 2101.0,
+                      1945.3, 1795.7, 1652.6, 1516.4, 1387.4, 1265.9, 1152.0,
+                      1045.9, 947.5, 856.7, 773.4, 697.3, 628.0, 565.3, 508.6,
+                      457.6, 411.8, 370.7, 333.9, 300.9, 271.4, 244.9, 221.1,
+                      199.8, 180.6, 163.2, 147.4, 133.1, 120.0, 108.0, 97.0,
+                      86.9, 77.6, 69.0, 61.1, 53.9, 47.2, 41.2, 35.7, 30.9,
+                      26.6, 22.8, 19.4, 16.5, 14.0, 11.8, 9.8, 8.1, 6.5, 5.1,
+                      3.9, 2.7, 1.6, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 38,
+                    values: [
+                      414.5, 387.6, 360.7, 333.8, 306.8, 279.9, 253.1, 226.3,
+                      199.6, 173.1, 147.1, 121.9, 98.1, 76.6, 58.5, 44.5, 34.7,
+                      28.2, 24.1, 21.4, 19.5, 18.0, 16.8, 15.6, 14.6, 13.5,
+                      12.5, 11.5, 10.5, 9.5, 8.5, 7.5, 6.5, 5.5, 4.5, 3.5, 2.5,
+                      1.5, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
-            // {
-            //   field: 'SST',
-            //   modelDir: 'CMC',
-            //   btnText: 'CMC',
-            //   longName: '',
-            //   depthProperties: {
-            //     hasDepth: false
-            //   },
-            //   imgBnds: { minLon: -71, maxLon: -56, minLat: 45.5, maxLat: 52 },
-            //   imgBndsZoomed: false,
-            //   availDateTimes: [],
-            // }
           ],
           colorbar: {
             hasColorbar: true,
@@ -925,64 +1304,206 @@ export const state = () => ({
       ],
     },
     {
-      name: 'SSS',
+      type: 'ocean',
+      name: 'salinity',
       show: true,
-      atmosphere: false,
-      longName: 'Sea Surface Salinity',
+      longName: null,
       fields: [
         {
-          name: 'SSS',
+          name: 'salinity',
           models: [
             {
-              category: 'SSS',
-              field: 'SSS',
+              category: 'salinity',
+              field: 'salinity',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
+              name: 'HYCOM',
               longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
               link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 40,
+                    values: [
+                      'bottom',
+                      5000,
+                      4000,
+                      3000,
+                      2500,
+                      2000,
+                      1500,
+                      1250,
+                      1000,
+                      900,
+                      800,
+                      700,
+                      600,
+                      500,
+                      400,
+                      350,
+                      300,
+                      250,
+                      200,
+                      150,
+                      125,
+                      100,
+                      90,
+                      80,
+                      70,
+                      60,
+                      50,
+                      45,
+                      40,
+                      35,
+                      30,
+                      25,
+                      20,
+                      15,
+                      12,
+                      10,
+                      8,
+                      6,
+                      4,
+                      2,
+                      0,
+                    ],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'SSS',
-              field: 'SSS',
+              category: 'salinity',
+              field: 'salinity',
               subProducts: { hasSub: false },
-              modelDir: 'Barents',
-              btnText: 'Barents',
-              longName: '',
-              link: 'https://www.met.no/hav-og-nordomrader-landing',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'SSS',
-              field: 'SSS',
+              category: 'salinity',
+              field: 'salinity',
               subProducts: { hasSub: false },
-              modelDir: 'CIOPS',
-              btnText: 'CIOPS',
-              longName: '',
-              link: '',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 98,
+                    values: [
+                      5657.8, 5454.7, 5253.2, 5053.5, 4855.5, 4659.3, 4464.9,
+                      4272.3, 4081.4, 3892.4, 3705.2, 3519.8, 3336.3, 3154.5,
+                      2974.6, 2796.5, 2620.2, 2445.6, 2272.9, 2101.9, 1932.6,
+                      1765.1, 1599.4, 1436.0, 1275.5, 1120.4, 975.7, 850.7,
+                      754.8, 687.9, 640.6, 603.6, 571.6, 542.3, 514.8, 488.7,
+                      463.8, 440.0, 417.4, 395.8, 375.1, 355.5, 336.8, 318.9,
+                      301.9, 285.8, 270.4, 255.7, 241.8, 228.6, 216.0, 204.0,
+                      192.7, 181.9, 171.6, 161.9, 152.7, 143.9, 135.6, 127.7,
+                      120.2, 113.1, 106.4, 100.0, 93.9, 88.2, 82.7, 77.6, 72.6,
+                      68.0, 63.6, 59.4, 55.4, 51.7, 48.1, 44.7, 41.5, 38.5,
+                      35.6, 32.9, 30.3, 27.8, 25.5, 23.2, 21.1, 19.1, 17.2,
+                      15.4, 13.7, 12.1, 10.5, 9.0, 7.6, 6.3, 5.0, 3.8, 2.7, 1.6,
+                      0.5,
+                    ],
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 67,
+                    values: [
+                      4488.2, 4290.0, 4093.2, 3898.0, 3704.7, 3513.4, 3324.6,
+                      3138.6, 2955.6, 2776.0, 2600.4, 2429.0, 2262.4, 2101.0,
+                      1945.3, 1795.7, 1652.6, 1516.4, 1387.4, 1265.9, 1152.0,
+                      1045.9, 947.5, 856.7, 773.4, 697.3, 628.0, 565.3, 508.6,
+                      457.6, 411.8, 370.7, 333.9, 300.9, 271.4, 244.9, 221.1,
+                      199.8, 180.6, 163.2, 147.4, 133.1, 120.0, 108.0, 97.0,
+                      86.9, 77.6, 69.0, 61.1, 53.9, 47.2, 41.2, 35.7, 30.9,
+                      26.6, 22.8, 19.4, 16.5, 14.0, 11.8, 9.8, 8.1, 6.5, 5.1,
+                      3.9, 2.7, 1.6, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 38,
+                    values: [
+                      414.5, 387.6, 360.7, 333.8, 306.8, 279.9, 253.1, 226.3,
+                      199.6, 173.1, 147.1, 121.9, 98.1, 76.6, 58.5, 44.5, 34.7,
+                      28.2, 24.1, 21.4, 19.5, 18.0, 16.8, 15.6, 14.6, 13.5,
+                      12.5, 11.5, 10.5, 9.5, 8.5, 7.5, 6.5, 5.5, 4.5, 3.5, 2.5,
+                      1.5, 0.5,
+                    ],
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'salinity',
+              field: 'salinity',
+              subProducts: { hasSub: false },
+              name: 'Barents',
+              longName: '',
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 15,
+                    values: [
+                      3000, 2000, 1000, 500, 300, 250, 200, 150, 100, 75, 50,
+                      25, 15, 10, 3, 0,
+                    ],
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
@@ -1042,47 +1563,103 @@ export const state = () => ({
       ],
     },
     {
-      name: 'SSD',
+      type: 'ocean',
+      name: 'density',
       show: true,
-      atmosphere: false,
-      longName: 'Sea Surface Density',
+      longName: null,
       fields: [
         {
-          name: 'SSD',
+          name: 'density',
           models: [
             {
-              category: 'SSD',
-              field: 'SSD',
+              category: 'density',
+              field: 'density',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
+              name: 'HYCOM',
               longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
               link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 40,
+                    values: [
+                      'bottom',
+                      5000,
+                      4000,
+                      3000,
+                      2500,
+                      2000,
+                      1500,
+                      1250,
+                      1000,
+                      900,
+                      800,
+                      700,
+                      600,
+                      500,
+                      400,
+                      350,
+                      300,
+                      250,
+                      200,
+                      150,
+                      125,
+                      100,
+                      90,
+                      80,
+                      70,
+                      60,
+                      50,
+                      45,
+                      40,
+                      35,
+                      30,
+                      25,
+                      20,
+                      15,
+                      12,
+                      10,
+                      8,
+                      6,
+                      4,
+                      2,
+                      0,
+                    ],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'SSD',
-              field: 'SSD',
+              category: 'density',
+              field: 'density',
               subProducts: { hasSub: false },
-              modelDir: 'Barents',
-              btnText: 'Barents',
+              name: 'Barents',
               longName: '',
-              link: 'https://www.met.no/hav-og-nordomrader-landing',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
           ],
           colorbar: {
@@ -1150,45 +1727,494 @@ export const state = () => ({
       ],
     },
     {
-      name: 'MLD',
+      type: 'ocean',
+      name: 'seaSurfaceHeight',
       show: true,
-      atmosphere: false,
-      longName: 'Mixed Layer Depth',
+      longName: null,
       fields: [
         {
-          name: 'MLD',
+          name: 'seaSurfaceHeight',
           models: [
             {
-              category: 'MLD',
-              field: 'MLD',
+              category: 'seaSurfaceHeight',
+              field: 'seaSurfaceHeight',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
-              longName: 'Hybrid Coordinate Ocean Model',
-              link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'MLD',
-              field: 'MLD',
+              category: 'seaSurfaceHeight',
+              field: 'seaSurfaceHeight',
               subProducts: { hasSub: false },
-              modelDir: 'RIOPS',
-              btnText: 'RIOPS',
-              longName: 'Regional Ice Ocean Prediction System',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'seaSurfaceHeight',
+              field: 'seaSurfaceHeight',
+              subProducts: { hasSub: false },
+              name: 'Barents',
+              longName: '',
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 0.01,
+            minOrg: -5,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: -1,
+                color: '#cc00cc',
+              },
+              {
+                value: -0.67,
+                color: '#0066cc',
+              },
+              {
+                value: -0.33,
+                color: '#009933',
+              },
+              {
+                value: 0.33,
+                color: '#ffff00',
+              },
+              {
+                value: 0.67,
+                color: '#ff0000',
+              },
+              {
+                value: 1,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: -1,
+                color: '#cc00cc',
+              },
+              {
+                value: -0.67,
+                color: '#0066cc',
+              },
+              {
+                value: -0.33,
+                color: '#009933',
+              },
+              {
+                value: 0.33,
+                color: '#ffff00',
+              },
+              {
+                value: 0.67,
+                color: '#ff0000',
+              },
+              {
+                value: 1,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 'm',
+          icon: 'mdi-account-circle',
+          hasSetting: true,
+        },
+      ],
+    },
+    {
+      type: 'ocean',
+      name: 'surfaceLayerDepth',
+      show: true,
+      longName: null,
+      fields: [
+        {
+          name: 'mixedLayerDepth',
+          models: [
+            {
+              category: 'surfaceLayerDepth',
+              field: 'mixedLayerDepth',
+              subProducts: { hasSub: false },
+              name: 'HYCOM',
+              longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
+              link: 'https://www.hycom.org/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'surfaceLayerDepth',
+              field: 'mixedLayerDepth',
+              subProducts: { hasSub: false },
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'surfaceLayerDepth',
+              field: 'mixedLayerDepth',
+              subProducts: { hasSub: false },
+              name: 'RIOPS',
+              longName: 'Regional Ice Ocean Prediction System',
+              regions: [
+                {
+                  name: 'North of 30',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: false,
+            },
+            {
+              category: 'surfaceLayerDepth',
+              field: 'mixedLayerDepth',
+              subProducts: { hasSub: false },
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 1,
+            minOrg: 0,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 200,
+                color: '#0066cc',
+              },
+              {
+                value: 400,
+                color: '#009933',
+              },
+              {
+                value: 600,
+                color: '#ffff00',
+              },
+              {
+                value: 800,
+                color: '#ff0000',
+              },
+              {
+                value: 1000,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 200,
+                color: '#0066cc',
+              },
+              {
+                value: 400,
+                color: '#009933',
+              },
+              {
+                value: 600,
+                color: '#ffff00',
+              },
+              {
+                value: 800,
+                color: '#ff0000',
+              },
+              {
+                value: 1000,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 'm',
+          icon: 'mdi-account-circle',
+          hasSetting: false,
+        },
+        {
+          name: 'boundaryLayerThickness',
+          models: [
+            {
+              category: 'surfaceLayerDepth',
+              field: 'boundaryLayerThickness',
+              subProducts: { hasSub: false },
+              name: 'HYCOM',
+              longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
+              link: 'https://www.hycom.org/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'surfaceLayerDepth',
+              field: 'boundaryLayerThickness',
+              subProducts: { hasSub: false },
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 1,
+            minOrg: 0,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 200,
+                color: '#0066cc',
+              },
+              {
+                value: 400,
+                color: '#009933',
+              },
+              {
+                value: 600,
+                color: '#ffff00',
+              },
+              {
+                value: 800,
+                color: '#ff0000',
+              },
+              {
+                value: 1000,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 200,
+                color: '#0066cc',
+              },
+              {
+                value: 400,
+                color: '#009933',
+              },
+              {
+                value: 600,
+                color: '#ffff00',
+              },
+              {
+                value: 800,
+                color: '#ff0000',
+              },
+              {
+                value: 1000,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 'm',
+          icon: 'mdi-account-circle',
+          hasSetting: false,
+        },
+        {
+          name: 'turboclineDepth',
+          models: [
+            {
+              category: 'surfaceLayerDepth',
+              field: 'turboclineDepth',
+              subProducts: { hasSub: false },
+              name: 'CIOPS',
+              longName: 'Coastal Ice-Ocean Prediction Systems',
+              description:
+                'The Coastal Ice Ocean Predicton System (CIOPS) provides a 48 hour ocean and ice forecast over different domains (East, West, Salish Sea) four times a day at 1/36° resolution. A pseudo-analysis component is forced at the ocean boundaries by the Regional Ice Ocean Prediction System (RIOPS) forecasts and spectrally nudged to the RIOPS solution in the deep ocean. Fields from the pseudo-analysis are used to initialize the 00Z forecast, whilst the 06, 12 and 18Z forecasts use a restart files saved at hour 6 from the previous forecast. The atmospheric fluxes for both the pseudo-analysis and forecast components are provided by the High Resolution Deterministic Prediction System (HRDPS) blended both spatially and temporally with either the Global Deterministic Prediction System (GDPS) (for CIOPS-East) or the Regional Deterministic Predicton System (RDPS) (for CIOPS-West) for areas not covered by the HRDPS.',
+              link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_ciops/readme_ciops_en/',
+              regions: [
+                {
+                  name: 'east',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -77, maxLon: -37, minLat: 34, maxLat: 55 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -140, maxLon: -122, minLat: 44, maxLat: 60 },
+                  availDateTimes: [],
+                },
+                {
+                  name: 'salishSea',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -127, maxLon: -121, minLat: 47, maxLat: 51 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
@@ -1256,103 +2282,133 @@ export const state = () => ({
       ],
     },
     // {
-    //   field: 'SWH',
+    //   name: 'Boundary Layer Thickness',
     //   show: false,
-    //   models: [
+    //   longName: null,
+    //   fields: [
     //     {
-    //       field: 'SWH',
-    //       subProducts:{hasSub:true,fields:['SWH','Sea-state']},
-    //       modelDir: 'CMC',
-    //       btnText: 'GEM',
-    //       longName: 'Global Environmental Multiscale Model',
-    //       depthProperties: {
-    //         hasDepth: false,
-    //       },
-    //       imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-    //       imgBndsZoomed: false,
-    //       min: 0,
-    //       max: 5,
-    //       availDateTimes: [],
-    //       hasDateTime: true,
+    //       name: 'boundaryLayer',
+    //       directory:'boundaryLayerThickness',
+    //       models: [
+    //         {
+    //           category: 'Boundary Layer Thickness',
+    //           field: 'Boundary Layer Thickness',
+    //           subProducts: { hasSub: false },
+    //           directory: 'HYCOM',
+    //           longName: 'Hybrid Coordinate Ocean Model',
+    //           link: 'https://www.hycom.org/',
+    //           region: 'G',
+    //           type:'tile',
+    //           depthProperties: {
+    //             hasDepth: false,
+    //           },
+    //           imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+    //           imgBndsZoomed: false,
+    //           availDateTimes: [],
+    //           hasDateTime: true,
+    //         },
+    //       ],
     //       colorbar: {
     //         hasColorbar: true,
-    //         labels: [
-    //           { location: 0, label: '10+' },
-    //           { location: 0.5, label: '5' },
-    //           { location: 0.8, label: '2' },
-    //           { location: 0.9, label: '1' },
-    //           { location: 1, label: '0' },
+    //         step: 1,
+    //         minOrg: 0,
+    //         toFixed: 0,
+    //         colormapOrg: [
+    //           {
+    //             value: 0,
+    //             color: '#cc00cc',
+    //           },
+    //           {
+    //             value: 200,
+    //             color: '#0066cc',
+    //           },
+    //           {
+    //             value: 400,
+    //             color: '#009933',
+    //           },
+    //           {
+    //             value: 600,
+    //             color: '#ffff00',
+    //           },
+    //           {
+    //             value: 800,
+    //             color: '#ff0000',
+    //           },
+    //           {
+    //             value: 1000,
+    //             color: '#ffcccc',
+    //           },
     //         ],
     //         colormap: [
     //           {
-    //             minValue: 0,
-    //             maxValue: 2,
-    //             minColor: [0, 51, 153],
-    //             maxColor: [0, 255, 204],
+    //             value: 0,
+    //             color: '#cc00cc',
     //           },
     //           {
-    //             minValue: 2,
-    //             maxValue: 4,
-    //             minColor: [0, 255, 204],
-    //             maxColor: [51, 204, 51],
+    //             value: 200,
+    //             color: '#0066cc',
     //           },
     //           {
-    //             minValue: 4,
-    //             maxValue: 6,
-    //             minColor: [51, 204, 51],
-    //             maxColor: [204, 204, 0],
+    //             value: 400,
+    //             color: '#009933',
     //           },
     //           {
-    //             minValue: 6,
-    //             maxValue: 8,
-    //             minColor: [204, 204, 0],
-    //             maxColor: [204, 0, 0],
+    //             value: 600,
+    //             color: '#ffff00',
     //           },
     //           {
-    //             minValue: 8,
-    //             maxValue: 10,
-    //             minColor: [204, 0, 0],
-    //             maxColor: [255, 204, 204],
+    //             value: 800,
+    //             color: '#ff0000',
+    //           },
+    //           {
+    //             value: 1000,
+    //             color: '#ffcccc',
     //           },
     //         ],
     //       },
     //       unit: 'm',
+    //       icon: 'mdi-account-circle',
+    //       hasSetting: false,
     //     },
     //   ],
-    //   icon: 'mdi-waves',
-    //   hasSetting: false,
     // },
     {
-      name: 'Wave',
+      type: 'ocean',
+      name: 'wave',
       show: true,
-      atmosphere: false,
-      longName: 'Wave Related Products',
+      longName: 'wave',
       fields: [
         {
-          name: 'SWH',
-          longName: 'Sea Wave Height',
+          name: 'combinedWaveHeight',
           models: [
             {
-              category: 'Wave',
-              field: 'SWH',
-              modelDir: 'GFS',
-              btnText: 'GFS',
-              longName: 'Significant height of combined wind waves and swell',
-              link: 'https://nomads.ncep.noaa.gov/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              category: 'wave',
+              field: 'combinedWaveHeight',
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
-            step: 0.01,
+            hasColorbar: true,
+            step: 0.1,
             minOrg: 0,
-            toFixed: 2,
+            toFixed: 1,
             colormapOrg: [
               {
                 value: 0,
@@ -1410,31 +2466,36 @@ export const state = () => ({
           hasSetting: false,
         },
         {
-          name: 'SSC',
-          longName: 'Sea State Code',
+          name: 'swellWaveHeight',
           models: [
             {
-              category: 'Wave',
-              field: 'SSC',
-              modelDir: 'GFS',
-              btnText: 'GFS',
-              longName:
-                'In oceanography, sea state is the general condition of the free surface on a large body of water, with respect to wind waves and swell, at a certain location and moment.',
-              link: 'https://en.wikipedia.org/wiki/Sea_state',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              category: 'wave',
+              field: 'swellWaveHeight',
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
             hasColorbar: true,
-            step: 1,
+            step: 0.1,
             minOrg: 0,
+            toFixed: 1,
             colormapOrg: [
               {
                 value: 0,
@@ -1442,38 +2503,22 @@ export const state = () => ({
               },
               {
                 value: 1,
-                color: '#9966ff',
+                color: '#0066cc',
               },
               {
                 value: 2,
-                color: '#3366ff',
-              },
-              {
-                value: 3,
-                color: '#0099ff',
-              },
-              {
-                value: 4,
-                color: '#00cc66',
+                color: '#009933',
               },
               {
                 value: 5,
-                color: '#66ff33',
-              },
-              {
-                value: 6,
                 color: '#ffff00',
               },
               {
-                value: 7,
-                color: '#ff6600',
+                value: 10,
+                color: '#ff0000',
               },
               {
-                value: 8,
-                color: '#cc0000',
-              },
-              {
-                value: 9,
+                value: 20,
                 color: '#ffcccc',
               },
             ],
@@ -1484,72 +2529,438 @@ export const state = () => ({
               },
               {
                 value: 1,
-                color: '#9966ff',
+                color: '#0066cc',
               },
               {
                 value: 2,
-                color: '#3366ff',
-              },
-              {
-                value: 3,
-                color: '#0099ff',
-              },
-              {
-                value: 4,
-                color: '#00cc66',
+                color: '#009933',
               },
               {
                 value: 5,
-                color: '#66ff33',
-              },
-              {
-                value: 6,
                 color: '#ffff00',
               },
               {
-                value: 7,
-                color: '#ff6600',
+                value: 10,
+                color: '#ff0000',
               },
               {
-                value: 8,
-                color: '#cc0000',
-              },
-              {
-                value: 9,
+                value: 20,
                 color: '#ffcccc',
               },
             ],
           },
-          unit: '',
+          unit: 'm',
           hasSetting: false,
         },
+        {
+          name: 'windWaveHeight',
+          models: [
+            {
+              category: 'wave',
+              field: 'windWaveHeight',
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 0.1,
+            minOrg: 0,
+            toFixed: 1,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 'm',
+          hasSetting: false,
+        },
+
+        {
+          name: 'swellWavePeriod',
+          models: [
+            {
+              category: 'wave',
+              field: 'swellWavePeriod',
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 1,
+            minOrg: 0,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 's',
+          hasSetting: false,
+        },
+        {
+          name: 'windWavePeriod',
+          models: [
+            {
+              category: 'wave',
+              field: 'windWavePeriod',
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            step: 1,
+            minOrg: 0,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#cc00cc',
+              },
+              {
+                value: 1,
+                color: '#0066cc',
+              },
+              {
+                value: 2,
+                color: '#009933',
+              },
+              {
+                value: 5,
+                color: '#ffff00',
+              },
+              {
+                value: 10,
+                color: '#ff0000',
+              },
+              {
+                value: 20,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: 's',
+          hasSetting: false,
+        },
+        // {
+        //   name: 'Sea State Code',
+        //   directory:'SSC',
+        //   models: [
+        //     {
+        //       category: 'Wave',
+        //       field: 'SSC',
+        //       directory: 'GFS',
+        //       longName:
+        //         'In oceanography, sea state is the general condition of the free surface on a large body of water, with respect to wind waves and swell, at a certain location and moment.',
+        //       link: 'https://en.wikipedia.org/wiki/Sea_state',
+        //       region: 'G',
+        //       type:'tile',
+        //       depthProperties: {
+        //         hasDepth: false,
+        //       },
+        //       imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+        //       imgBndsZoomed: false,
+        //       availDateTimes: [],
+        //       hasDateTime: true,
+        //     },
+        //   ],
+        //   colorbar: {
+        //     hasColorbar: true,
+        //     step: 1,
+        //     minOrg: 0,
+        //     colormapOrg: [
+        //       {
+        //         value: 0,
+        //         color: '#cc00cc',
+        //       },
+        //       {
+        //         value: 1,
+        //         color: '#9966ff',
+        //       },
+        //       {
+        //         value: 2,
+        //         color: '#3366ff',
+        //       },
+        //       {
+        //         value: 3,
+        //         color: '#0099ff',
+        //       },
+        //       {
+        //         value: 4,
+        //         color: '#00cc66',
+        //       },
+        //       {
+        //         value: 5,
+        //         color: '#66ff33',
+        //       },
+        //       {
+        //         value: 6,
+        //         color: '#ffff00',
+        //       },
+        //       {
+        //         value: 7,
+        //         color: '#ff6600',
+        //       },
+        //       {
+        //         value: 8,
+        //         color: '#cc0000',
+        //       },
+        //       {
+        //         value: 9,
+        //         color: '#ffcccc',
+        //       },
+        //     ],
+        //     colormap: [
+        //       {
+        //         value: 0,
+        //         color: '#cc00cc',
+        //       },
+        //       {
+        //         value: 1,
+        //         color: '#9966ff',
+        //       },
+        //       {
+        //         value: 2,
+        //         color: '#3366ff',
+        //       },
+        //       {
+        //         value: 3,
+        //         color: '#0099ff',
+        //       },
+        //       {
+        //         value: 4,
+        //         color: '#00cc66',
+        //       },
+        //       {
+        //         value: 5,
+        //         color: '#66ff33',
+        //       },
+        //       {
+        //         value: 6,
+        //         color: '#ffff00',
+        //       },
+        //       {
+        //         value: 7,
+        //         color: '#ff6600',
+        //       },
+        //       {
+        //         value: 8,
+        //         color: '#cc0000',
+        //       },
+        //       {
+        //         value: 9,
+        //         color: '#ffcccc',
+        //       },
+        //     ],
+        //   },
+        //   unit: '',
+        //   hasSetting: false,
+        // },
       ],
     },
     {
-      name: 'SHF',
+      type: 'ocean',
+      name: 'surfaceHeatFlux',
       show: true,
-      atmosphere: false,
-      longName: 'Surface Heat Flux',
+      longName: null,
       fields: [
         {
-          name: 'SHF',
+          name: 'heatFlux',
           models: [
             {
-              category: 'SHF',
-              field: 'SHF',
+              category: 'surfaceHeatFlux',
+              field: 'heatFlux',
               subProducts: { hasSub: false },
-              modelDir: 'HYCOM',
-              btnText: 'HYCOM',
+              name: 'HYCOM',
               longName: 'Hybrid Coordinate Ocean Model',
+              description:
+                'The HYCOM consortium is a multi-institutional effort sponsored by the National Ocean Partnership Program (NOPP), as part of the U. S. Global Ocean Data Assimilation Experiment (GODAE), to develop and evaluate a data-assimilative hybrid isopycnal-sigma-pressure (generalized) coordinate ocean model (called HYbrid Coordinate Ocean Model or HYCOM). The GODAE objectives of three-dimensional depiction of the ocean state at fine resolution in real time, provision of boundary conditions for coastal and regional models, and provision of oceanic boundary conditions for a global coupled ocean-atmosphere prediction model, are being addressed by a partnership of institutions that represent a broad spectrum of the oceanographic community.',
               link: 'https://www.hycom.org/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
@@ -1623,18 +3034,17 @@ export const state = () => ({
       ],
     },
     {
-      name: 'Seaice',
+      type: 'ocean',
+      name: 'seaice',
       show: true,
-      atmosphere: false,
       longName: null,
       fields: [
         {
-          name: 'Seaice',
+          name: 'seaiceAreaFraction',
           models: [
             // {
             //   field: 'Seaice',
-            //   modelDir: 'CMC',
-            //   btnText: 'GEM',
+            //   directory: 'CMC',
             //   longName: 'Global Environmental Multiscale Model',
             //   depthProperties: {
             //     hasDepth: false
@@ -1669,73 +3079,399 @@ export const state = () => ({
             //   unit: '%'
             // },
             {
-              category: 'Seaice',
-              field: 'Seaice',
+              category: 'seaice',
+              field: 'seaiceAreaFraction',
               subProducts: { hasSub: false },
-              modelDir: 'RTOFS',
-              btnText: 'RTOFS',
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
               longName: 'Real-Time Ocean Forecast System',
               link: 'https://polar.ncep.noaa.gov/global/',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
             },
             {
-              category: 'Seaice',
-              field: 'Seaice',
+              category: 'seaice',
+              field: 'seaiceAreaFraction',
               subProducts: { hasSub: false },
-              modelDir: 'RIOPS',
-              btnText: 'RIOPS',
+              name: 'RIOPS',
               longName: 'Regional Ice Ocean Prediction System',
               link: 'https://eccc-msc.github.io/open-data/msc-data/nwp_riops/readme_riops-datamart-alpha_en/',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'North of 30',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'Seaice',
-              field: 'Seaice',
+              category: 'seaice',
+              field: 'seaiceAreaFraction',
               subProducts: { hasSub: false },
-              modelDir: 'Coraltemp',
-              btnText: 'Coraltemp',
+              name: 'Coraltemp',
               longName:
                 'Daily Global 5km Satellite Coral Bleaching Heat Stress Monitoring (v3.1)',
               link: 'https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.nodc:CRW-5km-HeatStressProducts',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
             {
-              category: 'Seaice',
-              field: 'Seaice',
+              category: 'seaice',
+              field: 'seaiceAreaFraction',
               subProducts: { hasSub: false },
-              modelDir: 'Barents',
-              btnText: 'Barents',
+              name: 'Barents',
               longName: '',
-              link: 'https://www.met.no/hav-og-nordomrader-landing',
-              region: 'R',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            minOrg: 0,
+            step: 1,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#66b3ff',
+              },
+              {
+                value: 100,
+                color: '#003366',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#66b3ff',
+              },
+              {
+                value: 100,
+                color: '#003366',
+              },
+            ],
+          },
+          unit: '%',
+          icon: 'mdi-skate',
+          hasSetting: false,
+        },
+        {
+          name: 'seaiceThickness',
+          models: [
+            {
+              category: 'seaice',
+              field: 'seaiceThickness',
+              subProducts: { hasSub: false },
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'seaice',
+              field: 'seaiceThickness',
+              subProducts: { hasSub: false },
+              name: 'Barents',
+              longName: '',
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'seaice',
+              field: 'seaiceThickness',
+              subProducts: { hasSub: false },
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'Global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [2],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            minOrg: 0,
+            step: 0.01,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#66b3ff',
+              },
+              {
+                value: 5,
+                color: '#003366',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#66b3ff',
+              },
+              {
+                value: 5,
+                color: '#003366',
+              },
+            ],
+          },
+          unit: '%',
+          icon: 'mdi-skate',
+          hasSetting: false,
+        },
+        {
+          name: 'seaiceTemperature',
+          models: [
+            {
+              category: 'seaice',
+              field: 'seaiceTemperature',
+              subProducts: { hasSub: false },
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            minOrg: -100,
+            step: 1,
+            toFixed: 0,
+            colormapOrg: [
+              {
+                value: -45,
+                color: '#cc00cc',
+              },
+              {
+                value: -40,
+                color: '#ff99ff',
+              },
+              {
+                value: -35,
+                color: '#0066cc',
+              },
+              {
+                value: -30,
+                color: '#66ffcc',
+              },
+              {
+                value: -25,
+                color: '#009933',
+              },
+              {
+                value: -20,
+                color: '#ccff66',
+              },
+              {
+                value: -15,
+                color: '#ffff00',
+              },
+              {
+                value: -10,
+                color: '#ff9933',
+              },
+              {
+                value: -5,
+                color: '#ff0000',
+              },
+              {
+                value: 0,
+                color: '#ffcccc',
+              },
+            ],
+            colormap: [
+              {
+                value: -45,
+                color: '#cc00cc',
+              },
+              {
+                value: -40,
+                color: '#ff99ff',
+              },
+              {
+                value: -35,
+                color: '#0066cc',
+              },
+              {
+                value: -30,
+                color: '#66ffcc',
+              },
+              {
+                value: -25,
+                color: '#009933',
+              },
+              {
+                value: -20,
+                color: '#ccff66',
+              },
+              {
+                value: -15,
+                color: '#ffff00',
+              },
+              {
+                value: -10,
+                color: '#ff9933',
+              },
+              {
+                value: -5,
+                color: '#ff0000',
+              },
+              {
+                value: 0,
+                color: '#ffcccc',
+              },
+            ],
+          },
+          unit: '%',
+          icon: 'mdi-skate',
+          hasSetting: false,
+        },
+        {
+          name: 'seaiceVelocity',
+          models: [
+            {
+              category: 'seaice',
+              field: 'seaiceVelocity',
+              subProducts: { hasSub: false },
+              name: 'RTOFS',
+              description:
+                'The Global Real-Time Ocean Forecast System (Global RTOFS) is based on an eddy resolving 1/12° global HYCOM (HYbrid Coordinates Ocean Model) and is part of a larger national backbone capability of ocean modeling at NWS in a strong partnership with US Navy. The Global RTOFS ocean model became operational 25 October 2011. In 2020 the Global RTOFS ocean model was upgraded to Version 2.0, which introduces a high-resolution ocean data assimilation capability to the forecast system for the first time. Global RTOFS provides predictions for up to eight days of ocean currents, salinity, temperature and sea ice conditions around the world.',
+              longName: 'Real-Time Ocean Forecast System',
+              link: 'https://polar.ncep.noaa.gov/global/',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'seaice',
+              field: 'seaiceVelocity',
+              subProducts: { hasSub: false },
+              name: 'Barents',
+              longName: '',
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
@@ -1771,30 +3507,34 @@ export const state = () => ({
       ],
     },
     {
-      name: 'Chlorophyll',
+      type: 'ocean',
+      name: 'chlorophyll',
       show: true,
-      atmosphere: false,
       longName: null,
       fields: [
         {
-          name: 'Chlorophyll',
+          name: 'chlorophyll',
           models: [
             {
-              category: 'Chlorophyll',
-              field: 'Chlorophyll',
+              category: 'chlorophyll',
+              field: 'chlorophyll',
               subProducts: { hasSub: false },
-              modelDir: 'MODIS',
-              btnText: 'MODIS',
+              name: 'MODIS',
               longName: 'Moderate Resolution Imaging Spectroradiometer',
               link: 'https://modis.gsfc.nasa.gov/data/dataprod/chlor_a.php',
-              region: 'G',
-              depthProperties: {
-                hasDepth: false,
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: false,
             },
           ],
           colorbar: {
@@ -1861,103 +3601,10 @@ export const state = () => ({
         },
       ],
     },
-    // {
-    //   name: 'Altimetry',
-    //   show: false,
-    //   longName: null,
-    //   fields: [
-    //     {
-    //       name: 'Altimetry',
-    //       models: [],
-    //       colorbar: {
-    //         hasColorbar: true,
-    //         step: 0.001,
-    //         minOrg: -1,
-    //         toFixed: 3,
-    //         colormapOrg: [
-    //           {
-    //             value: -1,
-    //             color: '#003399',
-    //           },
-    //           {
-    //             value: -0.75,
-    //             color: '#33cccc',
-    //           },
-    //           {
-    //             value: -0.5,
-    //             color: '#00cc66',
-    //           },
-    //           {
-    //             value: -0.25,
-    //             color: '#66ff66',
-    //           },
-    //           {
-    //             value: 0,
-    //             color: '#ffffff',
-    //           },
-    //           {
-    //             value: 0.25,
-    //             color: '#ffff00',
-    //           },
-    //           {
-    //             value: 0.5,
-    //             color: '#ff9900',
-    //           },
-    //           {
-    //             value: 0.75,
-    //             color: '#ff3300',
-    //           },
-    //           {
-    //             value: 1,
-    //             color: '#800000',
-    //           },
-    //         ],
-    //         colormap: [
-    //           {
-    //             value: -1,
-    //             color: '#003399',
-    //           },
-    //           {
-    //             value: -0.75,
-    //             color: '#33cccc',
-    //           },
-    //           {
-    //             value: -0.5,
-    //             color: '#00cc66',
-    //           },
-    //           {
-    //             value: -0.25,
-    //             color: '#66ff66',
-    //           },
-    //           {
-    //             value: 0,
-    //             color: '#ffffff',
-    //           },
-    //           {
-    //             value: 0.25,
-    //             color: '#ffff00',
-    //           },
-    //           {
-    //             value: 0.5,
-    //             color: '#ff9900',
-    //           },
-    //           {
-    //             value: 0.75,
-    //             color: '#ff3300',
-    //           },
-    //           {
-    //             value: 1,
-    //             color: '#800000',
-    //           },
-    //         ],
-    //       },
-    //       unit: 'm',
-    //       icon: '',
-    //       hasSetting: false,
-    //     },
-    //   ],
-    // },
+
+    // --- ATMOSPHERE
     {
+      type: 'atmosphere',
       name: 'wind',
       show: true,
       atmosphere: true,
@@ -1970,89 +3617,120 @@ export const state = () => ({
               category: 'wind',
               field: 'wind',
               subProducts: { hasSub: false },
-              modelDir: 'HRDPS',
-              btnText: 'HRDPS',
-              longName: '',
-              link: '',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: [
-                  '1015',
-                  '1000',
-                  // '985',
-                  // '970',
-                  '950',
-                  // '925',
-                  '900',
-                  // '875',
-                  '850',
-                  // '800',
-                  // '750',
-                  // '700',
-                  '650',
-                  // '600',
-                  // '550',
-                  '500',
-                  // '450',
-                  // '400',
-                  // '350',
-                  '300',
-                  // '275',
-                  // '250',
-                  // '225',
-                  '200',
-                  // '175',
-                  // '150',
-                  '100',
-                  // '50',
-                  // '30',
-                  // '20',
-                  // '10',
-                ],
-                depthValues: [
-                  '1015',
-                  '1000',
-                  // '985',
-                  // '970',
-                  '0950',
-                  // '925',
-                  '0900',
-                  // '875',
-                  '0850',
-                  // '800',
-                  // '750',
-                  // '700',
-                  '0650',
-                  // '600',
-                  // '550',
-                  '0500',
-                  // '450',
-                  // '400',
-                  // '350',
-                  '0300',
-                  // '275',
-                  // '250',
-                  // '225',
-                  '0200',
-                  // '175',
-                  // '150',
-                  '0100',
-                  // '50',
-                  // '30',
-                  // '20',
-                  // '10',
-                ],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 85 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [10],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'wind',
+              field: 'wind',
+              subProducts: { hasSub: false },
+              name: 'HRDPS',
+              longName: 'High Resolution Deterministic Prediction System',
+              description:
+                'The Environment Canada High Resolution Deterministic Prediction System is a regional model covering the majority of Canada and some of northern Continental US. For many years, this model was published as an experiment in providing this new data to the public. In December of 2017, HRDPS was changed into the operational category.With several NOAA models covering the contenential USA, and HRDPS covering almost all of Canada, we all now have public domain high resolution coverage for almost all of North America. There are several HRDPS models available. The model supported in LuckGrib is the largest, continental version.',
+              link: 'https://luckgrib.com/models/cmc_hrdps/',
+              regions: [
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [
+                      1015, 1000, 985, 970, 950, 925, 900, 875, 850, 800, 750,
+                      700, 650, 600, 550, 500, 450, 400, 350, 300, 275, 250,
+                      225, 200, 175, 150, 100, 50, 30, 20, 10,
+                    ],
+                  },
+                  bnds: { minLon: -136, maxLon: -108, minLat: 44, maxLat: 57 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'wind',
+              field: 'wind',
+              subProducts: { hasSub: false },
+              name: 'Barents',
+              longName: '',
+              description:
+                "The Barents-2.5 model is a coupled ocean and sea ice model covering the Barents Sea and areas around Svalbard. It is MET Norway's main forecasting model for sea ice in the Barents Sea. The model is based on the METROMS framework which implements the coupling between the ocean component (ROMS) and the sea ice component (CICE). The model employs a regular grid in the horizontal with 2.5km resolution, and an irregular topography-following vertical coordinate system for the ocean consisting of 42 layers, while the ice is modelled in 5 thickness categories, each with 7 vertical layers and a single snow layer on top. The ocean and sea ice is forced by atmospheric fields from MET Norway's in-house 2.5km AROME-Arctic model, a great advantage as the atmosphere forcing is on the same domain and resolution as the ocean and sea ice. Furthermore, boundary conditions comes from TOPAZ4, tides from TPXO tidal model, river runoff climatology from NVE data (mainland Norway) and AHYPE hydrological model (Svalbard+Russia) and the bottom topography is taken from the IBCAO v3 dataset. The model runs a 24 hours analysis for assimilating AMSR2 sea ice concentration from the University of Bremen and then runs a subsequent 66 hours forecast from the produced analysis.",
+              link: 'https://thredds.met.no/thredds/fou-hi/barents25.html',
+              regions: [
+                {
+                  name: '',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -18, maxLon: 82, minLat: 60, maxLat: 88 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
-            hasColorbar:false,
+            hasColorbar: false,
+            step: 0.01,
+            minOrg: -100,
+          },
+          unit: '<sup>m</sup>&frasl;<sub>s</sub>',
+          icon: 'mdi-sync',
+          hasSetting: true,
+        },
+        {
+          name: 'windGust',
+          models: [
+            {
+              category: 'wind',
+              field: 'windGust',
+              subProducts: { hasSub: false },
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [10],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: false,
+            },
+          ],
+          colorbar: {
+            hasColorbar: false,
             step: 0.01,
             minOrg: -100,
           },
@@ -2063,104 +3741,71 @@ export const state = () => ({
       ],
     },
     {
-      name: 'temperature',
+      type: 'atmosphere',
+      name: 'airTemperature',
       show: true,
-      atmosphere: true,
-      longName: 'Air Temperature',
+      longName: null,
       fields: [
         {
-          name: 'temperature',
+          name: 'airTemperature',
           models: [
             {
-              category: 'temperature',
-              field: 'temperature',
+              category: 'airTemperature',
+              field: 'airTemperature',
               subProducts: { hasSub: false },
-              modelDir: 'HRDPS',
-              btnText: 'HRDPS',
-              longName: '',
-              link: '',
-              region: 'R',
-              depthProperties: {
-                hasDepth: true,
-                iDepth: 0,
-                depthLabels: [
-                  '1015',
-                  '1000',
-                  // '985',
-                  // '970',
-                  '950',
-                  // '925',
-                  '900',
-                  // '875',
-                  '850',
-                  // '800',
-                  // '750',
-                  // '700',
-                  '650',
-                  // '600',
-                  // '550',
-                  '500',
-                  // '450',
-                  // '400',
-                  // '350',
-                  '300',
-                  // '275',
-                  // '250',
-                  // '225',
-                  '200',
-                  // '175',
-                  // '150',
-                  '100',
-                  // '50',
-                  // '30',
-                  // '20',
-                  // '10',
-                ],
-                depthValues: [
-                  '1015',
-                  '1000',
-                  // '985',
-                  // '970',
-                  '0950',
-                  // '925',
-                  '0900',
-                  // '875',
-                  '0850',
-                  // '800',
-                  // '750',
-                  // '700',
-                  '0650',
-                  // '600',
-                  // '550',
-                  '0500',
-                  // '450',
-                  // '400',
-                  // '350',
-                  '0300',
-                  // '275',
-                  // '250',
-                  // '225',
-                  '0200',
-                  // '175',
-                  // '150',
-                  '0100',
-                  // '50',
-                  // '30',
-                  // '20',
-                  // '10',
-                ],
-              },
-              imgBnds: { minLon: -180, maxLon: 180, minLat: -80, maxLat: 80 },
-              imgBndsZoomed: false,
-              availDateTimes: [],
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [2],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
               hasDateTime: true,
+              active: true,
+            },
+            {
+              category: 'airTemperature',
+              field: 'airTemperature',
+              subProducts: { hasSub: false },
+              name: 'HRDPS',
+              longName: 'High Resolution Deterministic Prediction System',
+              description:
+                'The Environment Canada High Resolution Deterministic Prediction System is a regional model covering the majority of Canada and some of northern Continental US. For many years, this model was published as an experiment in providing this new data to the public. In December of 2017, HRDPS was changed into the operational category.With several NOAA models covering the contenential USA, and HRDPS covering almost all of Canada, we all now have public domain high resolution coverage for almost all of North America. There are several HRDPS models available. The model supported in LuckGrib is the largest, continental version.',
+              link: 'https://luckgrib.com/models/cmc_hrdps/',
+              regions: [
+                {
+                  name: 'west',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [
+                      1015, 1000, 985, 970, 950, 925, 900, 875, 850, 800, 750,
+                      700, 650, 600, 550, 500, 450, 400, 350, 300, 275, 250,
+                      225, 200, 175, 150, 100, 50, 30, 20, 10,
+                    ],
+                  },
+                  bnds: { minLon: -136, maxLon: -108, minLat: 44, maxLat: 57 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
             },
           ],
           colorbar: {
             hasColorbar: true,
-            step: 0.1,
-            minOrg: -100,
-            toFixed: 0,
             colormapOrg: [
               {
                 value: -40,
@@ -2245,9 +3890,239 @@ export const state = () => ({
                 color: '#ffcccc',
               },
             ],
+            step: 0.01,
+            minOrg: -100,
           },
-          unit: '&deg;C',
-          icon: 'mdi-thermometer',
+          unit: 'C',
+          icon: 'mdi-sync',
+          hasSetting: true,
+        },
+      ],
+    },
+    {
+      type: 'atmosphere',
+      name: 'relativeHumidity',
+      show: true,
+      longName: null,
+      fields: [
+        {
+          name: 'relativeHumidity',
+          models: [
+            {
+              category: 'relativeHumidity',
+              field: 'relativeHumidity',
+              subProducts: { hasSub: false },
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: true,
+                    iLevel: 0,
+                    values: [2],
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            colormapOrg: [
+              {
+                value: 0,
+                color: '#05192C',
+              },
+              {
+                value: 25,
+                color: '#D0AE8B',
+              },
+              {
+                value: 50,
+                color: '#E8E4E2',
+              },
+              {
+                value: 75,
+                color: '#73CCD8',
+              },
+              {
+                value: 100,
+                color: '#52B1D2',
+              },
+            ],
+            colormap: [
+              {
+                value: 0,
+                color: '#05192C',
+              },
+              {
+                value: 25,
+                color: '#D0AE8B',
+              },
+              {
+                value: 50,
+                color: '#E8E4E2',
+              },
+              {
+                value: 75,
+                color: '#73CCD8',
+              },
+              {
+                value: 100,
+                color: '#52B1D2',
+              },
+            ],
+            step: 1,
+            minOrg: 0,
+          },
+          unit: '%',
+          icon: 'mdi-sync',
+          hasSetting: false,
+        },
+      ],
+    },
+    {
+      type: 'atmosphere',
+      name: 'pressure',
+      show: true,
+      longName: null,
+      fields: [
+        {
+          name: 'sealevelPressure',
+          models: [
+            {
+              category: 'pressure',
+              field: 'sealevelPressure',
+              subProducts: { hasSub: false },
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            colormapOrg: [
+              {
+                value: 950,
+                color: '#0099ff',
+              },
+              {
+                value: 1000,
+                color: '#ffffff',
+              },
+              {
+                value: 1050,
+                color: '#ff9933',
+              },
+            ],
+            colormap: [
+              {
+                value: 950,
+                color: '#0099ff',
+              },
+              {
+                value: 1000,
+                color: '#ffffff',
+              },
+              {
+                value: 1050,
+                color: '#ff9933',
+              },
+            ],
+            step: 1,
+            minOrg: 900,
+            toFixed: 0,
+          },
+          unit: 'hPa',
+          icon: 'mdi-sync',
+          hasSetting: false,
+        },
+        {
+          name: 'surfacePressure',
+          models: [
+            {
+              category: 'pressure',
+              field: 'surfacePressure',
+              subProducts: { hasSub: false },
+              name: 'GEFS',
+              longName: 'Global Ensemble Forecast System',
+              description:
+                'The Global Ensemble Forecast System (GEFS) is a weather model created by the National Centers for Environmental Prediction (NCEP) that generates 21 separate forecasts (ensemble members) to address underlying uncertainties in the input data such limited coverage, instruments or observing systems biases, and the limitations of the model itself. GEFS quantifies these uncertainties by generating multiple forecasts, which in turn produce a range of potential outcomes based on differences or perturbations applied to the data after it has been incorporated into the model. Each forecast compensates for a different set of uncertainties.',
+              link: 'https://www.ncei.noaa.gov/products/weather-climate-models/global-ensemble-forecast',
+              regions: [
+                {
+                  name: 'global',
+                  levels: {
+                    hasLevels: false,
+                  },
+                  bnds: { minLon: -180, maxLon: 180, minLat: -90, maxLat: 90 },
+                  availDateTimes: [],
+                },
+              ],
+              iRegion: 0,
+              hasDateTime: true,
+              active: true,
+            },
+          ],
+          colorbar: {
+            hasColorbar: true,
+            colormapOrg: [
+              {
+                value: 950,
+                color: '#0099ff',
+              },
+              {
+                value: 1000,
+                color: '#ffffff',
+              },
+              {
+                value: 1050,
+                color: '#ff9933',
+              },
+            ],
+            colormap: [
+              {
+                value: 950,
+                color: '#0099ff',
+              },
+              {
+                value: 1000,
+                color: '#ffffff',
+              },
+              {
+                value: 1050,
+                color: '#ff9933',
+              },
+            ],
+            step: 1,
+            minOrg: 900,
+            toFixed: 0,
+          },
+          unit: 'hPa',
+          icon: 'mdi-sync',
           hasSetting: false,
         },
       ],
@@ -2258,8 +4133,7 @@ export const state = () => ({
     //   models: [
     //     {
     //       field: 'AIS',
-    //       modelDir: 'US',
-    //       btnText: 'US',
+    //       directory: 'US',
     //       longName: '',
     //       depthProperties: {
     //         hasDepth: false
@@ -2310,8 +4184,7 @@ export const state = () => ({
     //   models: [
     //     {
     //       field: 'Iceberg',
-    //       modelDir: 'NOAA',
-    //       btnText: 'NOAA',
+    //       directory: 'NOAA',
     //       longName: 'National Oceanic and Atmospheric Administration',
     //       depthProperties: {
     //         hasDepth: false
@@ -3959,131 +5832,131 @@ export const state = () => ({
       ],
     },
   ],
+
+  // --- NEW ------------------------------------------------------------
+
+  fields: [],
+  models: [],
+
+  interDateTime: null,
 })
 
 export const mutations = {
   setSelected(state, obj) {
-    if (obj === null) state.selected = null
-    else
-      state.selected = state.categories
-        .filter((c) => c.name === obj.category)[0]
-        .fields.filter((f) => f.name === obj.field)[0]
-        .models.filter((model) => model.modelDir === obj.model)[0]
-  },
-
-  updateSelected(state, selected) {
-    state.selected = selected
+    // if (obj === null) state.selected = null
+    // else {
+    //   state.selected = state.categories
+    //     .filter((c) => c.name === obj.category)[0]
+    //     .fields.filter((f) => f.name === obj.field)[0]
+    //     .models.filter((m) => m.name === obj.model)[0]
+    //   state.selected.iRegion = obj.iRegion
+    // }
+    state.selected = obj
   },
 
   setSelectedBathymetry(state, value) {
     state.selectedBathymetry = state.bathymetries.models.filter(
-      (bathymetry) => bathymetry.modelDir === value
+      (bathymetry) => bathymetry.directory === value
     )[0]
   },
 
   setAvailDateTimes(state, obj) {
-    const iCategory = state.categories.findIndex(
-      (c) => c.name === obj.data.category
+    const iModel = state.models.findIndex((m) => m.name === obj.modelName)
+    const iField = state.models[iModel].fields.findIndex(
+      (f) => f.name === obj.fieldName
     )
-    const iField = state.categories[iCategory].fields.findIndex(
-      (f) => f.name === obj.data.field
+    state.models[iModel].fields[iField].availDateTimes = obj.availDateTimes.map(
+      (dt) => moment.utc(dt, 'YYYYMMDD_HH')
     )
-    const iModel = state.categories[iCategory].fields[iField].models.findIndex(
-      (m) => m.modelDir === obj.data.model
-    )
-    state.categories[iCategory].fields[iField].models[iModel].availDateTimes =
-      obj.availDateTimes
-    state.categories[iCategory].fields[iField].models[iModel].lastProcessed =
-      obj.lastProcessed
+    state.models[iModel].fields[iField].lastProcessed = obj.lastProcessed
+
+    // const iCategory = state.categories.findIndex(
+    //   (c) => c.name === obj.data.category
+    // )
+    // const iField = state.categories[iCategory].fields.findIndex(
+    //   (f) => f.name === obj.data.field
+    // )
+    // const iModel = state.categories[iCategory].fields[iField].models.findIndex(
+    //   (m) => m.name === obj.data.model
+    // )
+
+    // state.categories[iCategory].fields[iField].models[iModel].regions[
+    //   obj.data.iRegion
+    // ].availDateTimes = obj.availDateTimes
+    // state.categories[iCategory].fields[iField].models[iModel].regions[
+    //   obj.data.iRegion
+    // ].lastProcessed = obj.lastProcessed
   },
 
-  setAltimetryAvailSatDates(state, obj) {
-    state.altimetryAvailSatDates = obj
+  setInterDateTime(state, momentObj) {
+    state.interDateTime = momentObj
   },
 
-  setDate(state, value) {
-    const dates = state.selected.availDateTimes.map((d) => d.date)
-    if (dates.includes(value)) state.interDate = value
-    else {
-      // --- Set the next closest date to the selected one
-      const futureDates = dates.filter(
-        (date) => parseInt(date) >= parseInt(value)
-      )
-      if (futureDates.length > 0) state.interDate = futureDates[0]
-      // --- If dates in future available, pick the first one (closest to now)
-      else state.interDate = dates[dates.length - 1] // --- else, pick the last available date
-    }
-    this.commit('layers/setTime', state.interTime)
+  // setDate(state, value) {
+  //   const iRegion = state.selected.iRegion
+  //   const dates = state.selected.regions[iRegion].availDateTimes.map(
+  //     (d) => d.date
+  //   )
+  //   if (dates.includes(value)) state.interDate = value
+  //   else {
+  //     // --- Set the next closest date to the selected one
+  //     const futureDates = dates.filter(
+  //       (date) => parseInt(date) >= parseInt(value)
+  //     )
+  //     if (futureDates.length > 0) state.interDate = futureDates[0]
+  //     // --- If dates in future available, pick the first one (closest to now)
+  //     else state.interDate = dates[dates.length - 1] // --- else, pick the last available date
+  //   }
+  //   this.commit('layers/setTime', state.interTime)
 
-    // state.interDate = value
+  //   // state.interDate = value
 
-    // --- Check if the current selectedTime is valid
-    // const times = state.selected.availDateTimes
-    //   .filter(d => d.date === state.interDate)
-    //   .map(d => d.time)
-    // if (!times.includes(state.interTime)) this.commit('layers/setTime', times[0])
-    // else this.commit('layers/setTime', state.interTime)
-  },
-
-  setTime(state, value) {
-    const times = state.selected.availDateTimes
-      .filter((d) => d.date === state.interDate)
-      .map((d) => d.time)
-    if (times.includes(value)) state.interTime = value
-    else {
-      // --- Set the next closest time to the selected one
-      const futureTimes = times.filter(
-        (time) => parseInt(time) >= parseInt(value)
-      )
-      if (futureTimes.length > 0) state.interTime = futureTimes[0]
-      // --- If times in future available, pick the first one (closest to now)
-      else state.interTime = times[times.length - 1] // --- else, pick the last available time
-    }
-
-    // if (value !== null) {
-    //   state.interTime = value
-    //   this.dispatch('map/redraw')
-    // }
-  },
-
-  setDepth(state, i) {
-    if (i === -1) i = state.selected.depthProperties.depthLabels.length - 1
-    // if (state.selected.depthProperties.iDepth !== i) {
-    state.selected.depthProperties.iDepth = i
-    //   this.dispatch('map/redraw')
-    // }
-  },
-
-  setSelectedAltimetrySatellites(state, array) {
-    state.selectedAltimetrySatellites = array
-  },
-
-  setSelectedAltimetryDates(state, array) {
-    state.selectedAltimetryDates = array
-  },
-
-  setSelectedAltimetryVariable(state, value) {
-    state.selectedAltimetryVariable = value
-  },
-
-  setAltimetryShownGJs(state, array) {
-    state.altimetryShownGJs = array
-  },
-  // setAltimetryGJ(state, gj) {
-  //   state.altimetryGJ = gj
+  //   // --- Check if the current selectedTime is valid
+  //   // const times = state.selected.availDateTimes
+  //   //   .filter(d => d.date === state.interDate)
+  //   //   .map(d => d.time)
+  //   // if (!times.includes(state.interTime)) this.commit('layers/setTime', times[0])
+  //   // else this.commit('layers/setTime', state.interTime)
   // },
 
-  setLoadingAltimetry(state, status) {
-    state.loadingAltimetry = status
+  // setTime(state, value) {
+  //   const iRegion = state.selected.iRegion
+  //   const times = state.selected.regions[iRegion].availDateTimes
+  //     .filter((d) => d.date === state.interDate)
+  //     .map((d) => d.time)
+
+  //   if (times.includes(value)) state.interTime = value
+  //   else {
+  //     // --- Set the next closest time to the selected one
+  //     const futureTimes = times.filter(
+  //       (time) => parseInt(time) >= parseInt(value)
+  //     )
+  //     // --- If times in future available, pick the first one (closest to now)
+  //     if (futureTimes.length > 0) state.interTime = futureTimes[0]
+  //     else state.interTime = times[times.length - 1] // --- else, pick the last available time
+  //   }
+
+  //   // if (value !== null) {
+  //   //   state.interTime = value
+  //   //   this.dispatch('map/redraw')
+  //   // }
+  // },
+
+  setLevel(state, i) {
+    // const iRegion = state.selected.iRegion
+    // if (i === -1) i = state.selected.levels.depthLabels.length - 1
+    // if (state.selected.depthProperties.iDepth !== i) {
+    state.selected.region.levels.iLevel = i
+    //   this.dispatch('map/redraw')
+    // }
   },
 
-  setColormap(state, obj) {
-    state.categories.forEach((category) => {
-      category.fields.forEach((field) => {
-        if (field.name === obj.field.name) {
-          field.colorbar.colormap = obj.colormap
-        }
-      })
-    })
+  // --- NEW ------------------------------------------------------------
+  setFields(state, array) {
+    state.fields = array
+  },
+
+  setModels(state, array) {
+    state.models = array
   },
 }

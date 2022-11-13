@@ -5,10 +5,10 @@ export function addBathymetry() {
   //   this.removeBathymetry()
   //   this.addBathymetryNOAAregions()
   // } else {
-    // this.$store.commit('map/setNOAAbathymetryRegion', null)
-    // this.removeBathymetryNOAAregions() // --- In case NOAA was previously selected
-    this.addBathymetryFilled()
-    if (this.showBathymetryContours) this.addBathymetryContours()
+  // this.$store.commit('map/setNOAAbathymetryRegion', null)
+  // this.removeBathymetryNOAAregions() // --- In case NOAA was previously selected
+  this.addBathymetryFilled()
+  if (this.showBathymetryContours) this.addBathymetryContours()
   // }
 }
 
@@ -30,7 +30,7 @@ export function addBathymetryFilled() {
   }
 
   const sessionID = this.$store.state.map.sessionID
-  const model = this.$store.state.layers.selectedBathymetry.modelDir
+  const model = this.$store.state.layers.selectedBathymetry.directory
   const colorbar = this.$store.state.layers.bathymetries.colorbar
   const minOrg = colorbar.minOrg
   const step = colorbar.step
@@ -39,22 +39,27 @@ export function addBathymetryFilled() {
 
   const stops = []
   const colors = []
-  colorbar.colormap.forEach(obj => {
+  colorbar.colormap.forEach((obj) => {
     stops.push(obj.value)
     colors.push(obj.color.replace('#', ''))
   })
 
-  stops.forEach(stop => {
+  stops.forEach((stop) => {
     url = `${url}&stop=${stop}`
   })
-  colors.forEach(color => {
+  colors.forEach((color) => {
     url = `${url}&color=${color}`
   })
 
   url = `${url}&dt=${Date.now()}`
   this.map.addSource('bathymetryFilled', {
     type: 'raster',
-    tiles:[url]
+    // tiles: [
+    //   `${process.env.tuvaq2Url}/mapTiles/Bathymetry/${
+    //     this.$store.state.layers.selectedBathymetry.directory
+    //   }/tiles/filled/${region ? region + '/' : ''}{z}/{x}/{y}.png`,
+    // ],
+    tiles: [url],
   })
 
   this.map.addLayer({
@@ -89,24 +94,29 @@ export function removeBathymetryFilled() {
 // ##################################################################
 // ######################## --- CONTOURS --- ########################
 export function addBathymetryContours() {
-  const region = this.$store.state.map.NOAAbathymetryRegion
+  // const region = this.$store.state.map.NOAAbathymetryRegion
   if (this.map.getSource('bathymetryContours')) {
     this.removeBathymetryContours()
   }
 
   this.map.addSource('bathymetryContours', {
     type: 'vector',
+    // tiles: [
+    //   `${process.env.tuvaq2Url}/models/${
+    //     this.selectedBathymetry.directory
+    //   }/contours/${
+    //     region ? region + '/' : ''
+    //   }{z}/{x}/{y}.pbf?dt=${Date.now()}`,
+    // ],
     tiles: [
-      `${process.env.tuvaq2Url}/mapTiles/Bathymetry/${
-        this.selectedBathymetry.modelDir
-      }/tiles/contours/${
-        region ? region + '/' : ''
-      }{z}/{x}/{y}.pbf?dt=${Date.now()}`,
+      `${process.env.tuvaq2Url}/models/${
+        this.selectedBathymetry.directory
+      }/contours/{z}/{x}/{y}.pbf?dt=${Date.now()}`,
     ],
   })
 
-  const selectedBathymetryContourLevels =
-    this.$store.state.map.selectedBathymetryContourLevels
+  const selectedBathymetryContours =
+    this.$store.state.map.selectedBathymetryContours
 
   this.map.addLayer({
     id: 'bathymetryContourLines',
@@ -120,24 +130,8 @@ export function addBathymetryContours() {
     paint: { 'line-color': '#666' },
     filter: [
       'all',
-      ['match', ['get', 'ELEV'], selectedBathymetryContourLevels, true, false],
+      ['match', ['get', 'ELEV'], selectedBathymetryContours, true, false],
     ],
-  })
-
-  this.map.addLayer({
-    id: 'bathymetryContourLabels',
-    type: 'symbol',
-    source: 'bathymetryContours',
-    'source-layer': 'depths',
-    filter: [
-      'all',
-      ['match', ['get', 'ELEV'], selectedBathymetryContourLevels, true, false],
-    ],
-    layout: {
-      'text-field': ['get', 'ELEV'],
-      'symbol-placement': 'line',
-    },
-    paint: { 'text-color': '#666' },
   })
 
   this.sortLayers()
@@ -145,20 +139,20 @@ export function addBathymetryContours() {
 
 export function modifyBathymetryContours() {
   if (this.map.getLayer('bathymetryContourLines')) {
-    const selectedBathymetryContourLevels =
-      this.$store.state.map.selectedBathymetryContourLevels
+    const selectedBathymetryContours =
+      this.$store.state.map.selectedBathymetryContours
     this.map.setFilter('bathymetryContourLines', [
       'all',
-      ['match', ['get', 'ELEV'], selectedBathymetryContourLevels, true, false],
+      ['match', ['get', 'ELEV'], selectedBathymetryContours, true, false],
     ])
   }
 
   if (this.map.getLayer('bathymetryContourLabels')) {
-    const selectedBathymetryContourLevels =
-      this.$store.state.map.selectedBathymetryContourLevels
+    const selectedBathymetryContours =
+      this.$store.state.map.selectedBathymetryContours
     this.map.setFilter('bathymetryContourLabels', [
       'all',
-      ['match', ['get', 'ELEV'], selectedBathymetryContourLevels, true, false],
+      ['match', ['get', 'ELEV'], selectedBathymetryContours, true, false],
     ])
   }
 }
@@ -261,7 +255,7 @@ export function addBathymetryBoundaries() {
     tiles: [
       `${
         process.env.tuvaq2Url
-      }/mapTiles/Bathymetry/EEZboundaries/tiles/{z}/{x}/{y}.pbf?dt=${Date.now()}`,
+      }/models/EEZboundaries/tiles/{z}/{x}/{y}.pbf?dt=${Date.now()}`,
     ],
   })
 
@@ -275,6 +269,10 @@ export function addBathymetryBoundaries() {
       'line-join': 'round',
     },
     paint: { 'line-color': '#606', 'line-width': 3 },
+    // filter: [
+    //   'all',
+    //   ['match', ['get', 'ELEV'], selectedBathymetryContours, true, false],
+    // ],
   })
 
   this.sortLayers()

@@ -1,0 +1,113 @@
+On branch newWindLoader
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   assets/css/map.css
+	modified:   assets/images/sentinel/bar.jpg
+	modified:   assets/images/sentinel/bar.odg
+	modified:   components/map/appMenu/bottomBar.vue
+	modified:   components/map/bathymetrySettings.vue
+	modified:   components/map/colorBar.vue
+	modified:   components/map/dateTimePicker.vue
+	modified:   components/map/depthPicker.vue
+	modified:   components/map/layers/altimetry/altimetry.js
+	modified:   components/map/layers/altimetry/altimetry.vue
+	modified:   components/map/layers/bathymetry.js
+	modified:   components/map/layers/currents/currents.js
+	modified:   components/map/layers/currents/currentsAnim.js
+	modified:   components/map/layers/currents/currentsStatic.js
+	modified:   components/map/layers/filledContour.js
+	modified:   components/map/layers/mapbox.vue
+	modified:   components/map/layers/profileTime.js
+	modified:   components/map/profile/profile.js
+	modified:   nuxt.config.js
+	modified:   package-lock.json
+	modified:   package.json
+	modified:   pages/index.vue
+	modified:   plugins/functions.js
+	modified:   plugins/map/functions.js
+	modified:   store/layers.js
+	modified:   store/map.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.vscode/
+	assets/css/tooltip.css
+	assets/images/contourOff.jpg
+	assets/images/contourOn.jpg
+	assets/images/wind.gif
+	assets/images/wind.png
+	assets/videos/
+	components/About/
+	components/Contact/
+	components/ForgotPassword/
+	components/History/
+	components/Home/
+	components/HomePage/
+	components/Login/
+	components/OceanExplorer/
+	components/OceanPlanner/
+	components/Panel/
+	components/Resources/
+	components/Signup/
+	components/map/OPASS/
+	components/map/PP/
+	components/map/WPgen/
+	components/map/appMenu/gliderMenu.vue
+	components/map/buttons.b.vue
+	components/map/dateTimePicker.vue.b
+	components/map/layers/currentsAnim.b.js
+	components/map/layers/currentsStatic.b.js
+	components/map/layers/distance.b.js
+	components/map/layers/drawLine.js.b
+	components/map/layers/mapbox.vue.b
+	components/map/layers/sentinel/
+	components/map/layersControl.1.vue
+	components/map/mapLayersPanel/
+	components/map/missions.vue.b
+	components/map/missions/
+	components/map/profileXY.b.vue
+	components/map/timePicker.b.vue
+	layouts/
+	middleware/redirectMappy.js
+	pages/about.vue
+	pages/careers.vue
+	pages/cnvGlider.vue
+	pages/contact.vue
+	pages/forgot-password.vue
+	pages/history.vue
+	pages/login.vue
+	pages/map.vue.b
+	pages/map/
+	pages/news/
+	pages/ocean-explorer.vue
+	pages/ocean-planner.vue
+	pages/panel/
+	pages/resources/
+	pages/services.vue
+	pages/services2.vue
+	pages/signup.vue
+	pages/team.vue
+	pages/team2.vue
+	pages/verify-email/
+	plugins/leaflet.js
+	plugins/map/sse.js
+	plugins/sse.js
+	plugins/vue-carousel.js
+	plugins/vue-slick-carousel.js
+	pushOceanMappy.sh
+	static/
+	store/PP.js
+	store/WPgen.js
+	store/altimetry.js
+	store/comments.js
+	store/index.js
+	store/missions.js
+	store/news.js
+	store/resources.js
+	store/sentinel.js
+	store/svgIcons.js
+	store/users.js
+	z
+
+no changes added to commit (use "git add" and/or "git commit -a")
